@@ -1,11 +1,12 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import type { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { json, urlencoded } from 'express';
 
 import { AppModule } from './app.module';
 import { config } from './config';
+
+import type { NestExpressApplication } from '@nestjs/platform-express';
 
 const isProd = config.app.isProd;
 const port = Number(config.port ?? 6000);

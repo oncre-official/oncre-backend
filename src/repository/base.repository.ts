@@ -46,14 +46,14 @@ export class BaseRepository<T> {
   }
 
   async findAndCount(query: GenericRecord, options?: Options): Promise<{ row: T[]; count: number }> {
-    const dataQueryBuilder = this.queryBuilder(query, options.populate, options?.sort);
+    const dataQueryBuilder = this.queryBuilder(query, options?.populate, options?.sort);
     const countQueryBuilder = this.repository.find(query);
 
     const [data, count] = await Promise.all([
       dataQueryBuilder
-        .select(options.select || '')
-        .skip(options.aggregate?.skip || 0)
-        .limit(options.aggregate?.limit || 0)
+        .select(options?.select || '')
+        .skip(options?.aggregate?.skip || 0)
+        .limit(options?.aggregate?.limit || 0)
         .exec(),
       countQueryBuilder.countDocuments().exec(),
     ]);
@@ -70,7 +70,7 @@ export class BaseRepository<T> {
       { new: true, upsert: true },
     );
 
-    if (options?.populate) queryBuilder = queryBuilder.populate(options.populate);
+    if (options?.populate) queryBuilder = queryBuilder.populate(options?.populate);
 
     return await queryBuilder.exec();
   }

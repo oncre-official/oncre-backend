@@ -7,7 +7,6 @@ export interface IJoinSearchConfig {
   unwind?: boolean;
   nestedJoins?: IJoinSearchConfig[];
 }
-
 export interface IJoinSearchQuery {
   search?: string;
   fields?: string[];
