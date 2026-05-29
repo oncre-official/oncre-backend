@@ -1,0 +1,107 @@
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { ApiProperty } from '@nestjs/swagger';
+import { Document, HydratedDocument } from 'mongoose';
+
+import { ICase, RecoveryMode } from '../types/case.interface';
+
+export type CaseDocument = HydratedDocument<Case>;
+
+@Schema({ collection: 'cases', versionKey: false, timestamps: true })
+export class Case extends Document implements ICase {
+  @ApiProperty({ description: 'Auto-generated: CA-00001' })
+  @Prop({ required: true, unique: true })
+  case_id: string;
+
+  @ApiProperty({ description: 'Merchant ID' })
+  @Prop({ required: true })
+  merchant_id: string;
+
+  @ApiProperty({ description: 'Debtor Name' })
+  @Prop({ required: true })
+  debtor_name: string;
+
+  @ApiProperty({ description: 'Debtor Phone' })
+  @Prop({ required: true })
+  debtor_phone: string;
+
+  @ApiProperty({ description: 'Debtor Address', required: false })
+  @Prop({ required: false })
+  debtor_address?: string;
+
+  @ApiProperty({ required: false })
+  @Prop({ required: false })
+  wholesaler_name?: string;
+
+  @ApiProperty({ required: false })
+  @Prop({ required: false })
+  amount: number;
+
+  @ApiProperty({ required: false })
+  @Prop({ required: false })
+  description?: string;
+
+  @ApiProperty({ required: false })
+  @Prop({ Type: Date, required: false })
+  due_date: Date;
+
+  @ApiProperty({ required: false })
+  @Prop({ required: false })
+  status: string;
+
+  @ApiProperty({ required: false })
+  @Prop({ Type: Number, required: false })
+  escalation_level: number;
+
+  @ApiProperty({ required: false })
+  @Prop({ Type: Number, required: false })
+  current_day: number;
+
+  @ApiProperty({ required: false })
+  @Prop({ Type: Boolean, required: false })
+  is_paused: boolean;
+
+  @ApiProperty({ required: false })
+  @Prop({ Type: Boolean, required: false })
+  hold?: boolean;
+
+  @ApiProperty({ required: false })
+  @Prop({ Type: Date, required: false })
+  hold_until?: Date;
+
+  @ApiProperty({ required: false })
+  @Prop({ Type: String, required: false })
+  pause_reason?: string;
+
+  @ApiProperty({ required: false })
+  @Prop({ Type: Date, required: false })
+  paused_at?: Date;
+
+  @ApiProperty({ required: false })
+  @Prop({ Type: Number, required: false })
+  paused_at_day?: number;
+
+  @ApiProperty({ required: false })
+  @Prop({ Type: Number, required: false })
+  paused_at_level?: number;
+
+  @ApiProperty({ required: false })
+  @Prop({ Type: Date, required: false })
+  activated_at: Date;
+
+  @ApiProperty({ required: false })
+  @Prop({ enum: RecoveryMode, required: false })
+  recovery_mode?: RecoveryMode;
+
+  @ApiProperty({ required: false })
+  @Prop({ Type: String, required: false })
+  payment_plan_id?: string | null;
+
+  @ApiProperty({ required: false })
+  @Prop({ Type: Number, required: false })
+  outstanding_balance?: number;
+}
+
+export const CaseSchema = SchemaFactory.createForClass(Case);
+
+CaseSchema.set('toObject', { virtuals: true });
+CaseSchema.set('toJSON', { virtuals: true });

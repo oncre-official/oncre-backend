@@ -8,33 +8,33 @@ import { ResponseDTO } from '@on/utils/types';
 
 import { JwtAuthGuard } from '../auth/guard/auth.guard';
 
-import { CreditService } from './credit.service';
-import { QueryCreditDto } from './dto/query.dto';
-import { Credit } from './model/credit.model';
+import { CaseService } from './case.service';
+import { QueryCaseDto } from './dto/query.dto';
+import { Case } from './model/case.model';
 
 import type { Response, Request } from 'express';
 
-@ApiTags('Credit')
+@ApiTags('Case')
 @ApiUnprocessableEntityResponse({ description: 'Error occurred', type: ApiResponseDTO })
-@Controller('api/v1/credits')
-export class CreditController {
-  constructor(private readonly creditService: CreditService) {}
+@Controller('api/v1/cases')
+export class CaseController {
+  constructor(private readonly caseService: CaseService) {}
 
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Get credits',
-    description: 'Allows users get credits',
+    summary: 'Get cases',
+    description: 'Allows users get cases',
   })
-  @ApiOkResponse({ description: 'Get credits successful ', type: [Credit] })
+  @ApiOkResponse({ description: 'Get cases successful ', type: [Case] })
   @UseGuards(JwtAuthGuard)
   @Get()
-  async findCredit(@Query() query: QueryCreditDto, @Res() res: Response, @Req() req: Request): Promise<ResponseDTO> {
+  async findCase(@Query() query: QueryCaseDto, @Res() res: Response, @Req() req: Request): Promise<ResponseDTO> {
     try {
       const { skip, limit } = query;
 
       const filter = requestFilter(query, { convertToRegex: false });
 
-      const response = await this.creditService.find(filter, skip, limit);
+      const response = await this.caseService.find(filter, skip, limit);
 
       return JsonResponse(res, response);
     } catch (error) {
