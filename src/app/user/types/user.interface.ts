@@ -4,13 +4,14 @@ import { USER_STATUS } from '@on/enum';
 import { IBaseType } from '@on/utils/types';
 
 export interface IUser extends IBaseType {
-  countryCode: string;
+  country_code: string;
   phone: string;
   email?: string;
-  roleId: ObjectId;
+  role_id: ObjectId;
   password: string;
   pin: string;
-  phoneVerified: boolean;
+  phone_verified: boolean;
+  email_verified: boolean;
   status: USER_STATUS;
-  lastLogin: Date;
+  last_login: Date;
 }

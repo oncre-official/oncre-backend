@@ -6,6 +6,6 @@ export interface IRole extends IBaseType {
 }
 
 export interface IRolePermission extends IBaseType {
-  roleId: string;
-  permissionId: string;
+  role_id: string;
+  permission_id: string;
 }

@@ -51,12 +51,12 @@ export class RolePermissionSeeder implements OnModuleInit {
         if (!permission) continue;
 
         const existingRolePermission = await this.rolePermission.findOne({
-          roleId: role._id,
-          permissionId: permission._id,
+          role_id: role._id,
+          permission_id: permission._id,
         });
 
         if (!existingRolePermission) {
-          await this.rolePermission.create({ roleId: role._id, permissionId: permission._id });
+          await this.rolePermission.create({ role_id: role._id, permission_id: permission._id });
           this.logger.log(`Attached ${permission.name} -> ${role.name}`);
         }
       }

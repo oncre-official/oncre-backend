@@ -19,7 +19,7 @@ export type UserDocument = HydratedDocument<User>;
 export class User extends Document implements IUser {
   @ApiProperty()
   @Prop({ type: String, required: true })
-  countryCode: string;
+  country_code: string;
 
   @ApiProperty()
   @Prop({ type: String, required: true, unique: true })
@@ -31,7 +31,7 @@ export class User extends Document implements IUser {
 
   @ApiProperty()
   @Prop({ type: Types.ObjectId, ref: 'Role', required: true })
-  roleId: ObjectId;
+  role_id: ObjectId;
 
   @ApiProperty()
   @Prop({ type: String, required: true })
@@ -43,11 +43,11 @@ export class User extends Document implements IUser {
 
   @ApiProperty()
   @Prop({ type: Boolean, required: true, default: false })
-  phoneVerified: boolean;
+  phone_verified: boolean;
 
   @ApiProperty()
   @Prop({ type: Boolean, required: true, default: false })
-  emailVerified: boolean;
+  email_verified: boolean;
 
   @ApiProperty()
   @Prop({ enum: USER_STATUS, required: true, default: USER_STATUS.INACTIVE })
@@ -55,23 +55,23 @@ export class User extends Document implements IUser {
 
   @ApiProperty()
   @Prop({ type: Date })
-  lastLogin: Date;
+  last_login: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
 
-UserSchema.index({ countryCode: 1, phone: 1 }, { unique: true });
+UserSchema.index({ country_code: 1, phone: 1 }, { unique: true });
 
 UserSchema.index({ email: 1 });
-UserSchema.index({ countryCode: 1, phone: 1 });
+UserSchema.index({ country_code: 1, phone: 1 });
 
 UserSchema.virtual('phoneNumber').get(function () {
-  return `${this.countryCode}${this.phone}`;
+  return `${this.country_code}${this.phone}`;
 });
 
 UserSchema.virtual('role', {
   ref: 'Role',
-  localField: 'roleId',
+  localField: 'role_id',
   foreignField: '_id',
   justOne: true,
 });
