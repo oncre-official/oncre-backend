@@ -1,6 +1,6 @@
 import { ObjectId } from 'mongodb';
 
-import { USER_STATUS } from '@on/enum';
+import { UserStatus } from '@on/enum';
 import { IBaseType } from '@on/utils/types';
 
 export interface IUser extends IBaseType {
@@ -12,6 +12,6 @@ export interface IUser extends IBaseType {
   pin: string;
   phone_verified: boolean;
   email_verified: boolean;
-  status: USER_STATUS;
+  status: UserStatus;
   last_login: Date;
 }

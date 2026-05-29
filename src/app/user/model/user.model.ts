@@ -3,7 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { ObjectId } from 'mongodb';
 import { Document, HydratedDocument, Types } from 'mongoose';
 
-import { USER_STATUS } from '@on/enum';
+import { UserStatus } from '@on/enum';
 
 import { IUser } from '../types/user.interface';
 
@@ -50,8 +50,8 @@ export class User extends Document implements IUser {
   email_verified: boolean;
 
   @ApiProperty()
-  @Prop({ enum: USER_STATUS, required: true, default: USER_STATUS.INACTIVE })
-  status: USER_STATUS;
+  @Prop({ enum: UserStatus, required: true, default: UserStatus.INACTIVE })
+  status: UserStatus;
 
   @ApiProperty()
   @Prop({ type: Date })

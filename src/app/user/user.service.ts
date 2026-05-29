@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, Injectable } from '@nestjs/common';
 
-import { TOKEN_TYPE } from '@on/enum';
+import { TokenType } from '@on/enum';
 import { getRandomNumber, normalizePhoneNumber } from '@on/helpers';
 import { compareResource, hashResource } from '@on/helpers/password';
 import { TermiiService } from '@on/services/termii/service';
@@ -85,7 +85,7 @@ export class UserService {
    * UTILITY METHOD
    **/
 
-  public async createVerificationOtp(user: User, type: TOKEN_TYPE = TOKEN_TYPE.PHONE_VERIFICATION) {
+  public async createVerificationOtp(user: User, type: TokenType = TokenType.PHONE_VERIFICATION) {
     const otpCode = getRandomNumber();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 

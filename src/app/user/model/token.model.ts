@@ -3,7 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { ObjectId } from 'mongodb';
 import { Document, HydratedDocument, Types } from 'mongoose';
 
-import { TOKEN_TYPE } from '@on/enum';
+import { TokenType } from '@on/enum';
 
 import { IToken } from '../types/token.interface';
 
@@ -16,8 +16,8 @@ export class Token extends Document implements IToken {
   userId: ObjectId;
 
   @ApiProperty()
-  @Prop({ enum: TOKEN_TYPE, required: true })
-  type: TOKEN_TYPE;
+  @Prop({ enum: TokenType, required: true })
+  type: TokenType;
 
   @ApiProperty()
   @Prop({ type: String, required: true })

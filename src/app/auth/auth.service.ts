@@ -1,7 +1,7 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
-import { TOKEN_TYPE, USER_STATUS } from '@on/enum';
+import { TokenType, UserStatus } from '@on/enum';
 import { compareResource, hashResource } from '@on/helpers/password';
 import { ServiceResponse } from '@on/utils/types';
 
@@ -75,13 +75,13 @@ export class AuthService {
     if (!user) throw new NotFoundException('User with this phone number does not exist.');
     if (user.phoneVerified) throw new BadRequestException('Phone number is already verified.');
 
-    const token = await this.token.findOne({ type: TOKEN_TYPE.PHONE_VERIFICATION, token: otp });
+    const token = await this.token.findOne({ type: TokenType.PHONE_VERIFICATION, token: otp });
     if (!token) throw new BadRequestException('Invalid OTP code.');
 
     if (token.userId.toString() !== user._id.toString()) throw new BadRequestException('Invalid user OTP.');
     if (token.expiresAt < new Date()) throw new BadRequestException('OTP has expired. Please request a new one.');
 
-    const updated = await this.user.updateById(user._id, { phoneVerified: true, status: USER_STATUS.ACTIVE });
+    const updated = await this.user.updateById(user._id, { phoneVerified: true, status: UserStatus.ACTIVE });
     await token.deleteOne();
 
     const jwt = this.jwt.sign(user.toJSON());
@@ -157,7 +157,7 @@ export class AuthService {
     if (!user) throw new NotFoundException('User with this phone number does not exist.');
     if (!user.phoneVerified) throw new BadRequestException('Phone number not verified');
 
-    const otp = await this.userService.createVerificationOtp(user, TOKEN_TYPE.PIN_RESET);
+    const otp = await this.userService.createVerificationOtp(user, TokenType.PIN_RESET);
 
     const data: IRegisterResponse = {
       phone,
@@ -174,7 +174,7 @@ export class AuthService {
     const user = await this.user.findOne({ phone });
     if (!user) throw new NotFoundException('User with this phone number does not exist.');
 
-    const token = await this.token.findOne({ type: TOKEN_TYPE.PIN_RESET, token: otp });
+    const token = await this.token.findOne({ type: TokenType.PIN_RESET, token: otp });
     if (!token) throw new BadRequestException('Invalid OTP code.');
 
     if (token.userId.toString() !== user._id.toString()) throw new BadRequestException('Invalid user OTP.');
