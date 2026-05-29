@@ -1,13 +1,3 @@
-export enum ROLE {
-  MERCHANT = 'merchant',
-  C00PERATIVE = 'cooperative',
-}
-
-export enum BUSINESS_TYPE {
-  MERCHANT = 'merchant',
-  COOPERATIVE = 'cooperative',
-}
-
 export enum USER_STATUS {
   ACTIVE = 'active',
   INACTIVE = 'inactive',
