@@ -13,11 +13,11 @@ import { User } from '../user/model/user.model';
 import { OfferCreditDto } from './dto/offer.dto';
 import { QueryCreditDto } from './dto/query.dto';
 import { QueryRepaymentDto, RepaymentDto } from './dto/repay.dto';
-import { Credit } from './model/credit.model';
+import { Credit } from './model/message.model';
 import { Repayment } from './model/repayment.model';
-import { CreditRepository } from './repository/credit.repository';
+import { CreditRepository } from './repository/message.repository';
 import { RepaymentRepository } from './repository/repayment.repository';
-import { CREDIT_STATUS, ICreditNotification } from './types/credit.interface';
+import { CREDIT_STATUS, ICreditNotification } from './types/message.interface';
 import { IRepaymentNotification } from './types/repayment.interface';
 
 @Injectable()

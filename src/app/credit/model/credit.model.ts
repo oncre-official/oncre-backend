@@ -39,7 +39,7 @@ export class Credit extends Document implements ICredit {
   credit_date: Date;
 
   @ApiProperty({ description: 'Due date for the credit', example: '2024-02-01T00:00:00Z' })
-  @Prop({ required: false })
+  @Prop({ required: false, Type: Date })
   due_date: Date;
 
   @ApiProperty({ description: 'Location associated with the credit', example: '123 Main St, City, Country' })

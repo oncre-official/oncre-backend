@@ -13,7 +13,7 @@ import { CreditService } from './credit.service';
 import { OfferCreditDto } from './dto/offer.dto';
 import { QueryCreditDto } from './dto/query.dto';
 import { QueryRepaymentDto, RepaymentDto } from './dto/repay.dto';
-import { Credit } from './model/credit.model';
+import { Credit } from './model/message.model';
 import { Repayment } from './model/repayment.model';
 
 import type { UserDocument } from '../user/model/user.model';

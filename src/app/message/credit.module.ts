@@ -6,9 +6,9 @@ import { NotificationModule } from '../notification/notification.module';
 
 import { CreditController } from './credit.controller';
 import { CreditService } from './credit.service';
-import { Credit, CreditSchema } from './model/credit.model';
+import { Credit, CreditSchema } from './model/message.model';
 import { Repayment, RepaymentSchema } from './model/repayment.model';
-import { CreditRepository } from './repository/credit.repository';
+import { CreditRepository } from './repository/message.repository';
 import { RepaymentRepository } from './repository/repayment.repository';
 
 @Module({
