@@ -2,24 +2,26 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { ApiProperty } from '@nestjs/swagger';
 import { Document, HydratedDocument } from 'mongoose';
 
-import { CasePaymentStatus } from '@on/enum';
+import { InstallmentPaymentStatus, IPaymentInstallment } from '../types/payment-plan.interface';
 
-import { IPayment } from '../types/payment.interface';
-
-export type PaymentDocument = HydratedDocument<Payment>;
+export type PaymentInstallmentDocument = HydratedDocument<PaymentInstallment>;
 
 @Schema({
-  collection: 'payments',
+  collection: 'payment_plans',
   versionKey: false,
   timestamps: {
     createdAt: 'created_at',
     updatedAt: 'updated_at',
   },
 })
-export class Payment extends Document implements IPayment {
+export class PaymentInstallment extends Document implements IPaymentInstallment {
   @ApiProperty()
   @Prop({ type: String })
-  payment_id: string;
+  installment_id: string;
+
+  @ApiProperty()
+  @Prop({ type: String })
+  plan_id: string;
 
   @ApiProperty({ description: 'Auto-generated: CA-00001' })
   @Prop({ required: true, unique: true })
@@ -30,31 +32,31 @@ export class Payment extends Document implements IPayment {
   amount: number;
 
   @ApiProperty({ required: false })
-  @Prop({ required: false })
-  amount_paid: number;
+  @Prop({ Type: Date, required: false })
+  due_date: Date;
 
   @ApiProperty({ required: false })
-  @Prop({ enum: CasePaymentStatus, required: false })
-  status: CasePaymentStatus;
-
-  @ApiProperty({ required: false })
-  @Prop({ Type: String, required: false })
-  reference: string;
-
-  @ApiProperty({ required: false })
-  @Prop({ Type: String, required: false })
-  provider?: string;
+  @Prop({ enum: InstallmentPaymentStatus, required: false })
+  status: InstallmentPaymentStatus;
 
   @ApiProperty({ required: false })
   @Prop({ Type: String, required: false })
   payment_url: string;
 
   @ApiProperty({ required: false })
+  @Prop({ Type: String, required: false })
+  reference: string;
+
+  @ApiProperty({ required: false })
+  @Prop({ required: false })
+  amount_paid: number;
+
+  @ApiProperty({ required: false })
   @Prop({ Type: Date, required: false })
   paid_at: Date | null;
 }
 
-export const PaymentSchema = SchemaFactory.createForClass(Payment);
+export const PaymentInstallmentSchema = SchemaFactory.createForClass(PaymentInstallment);
 
-PaymentSchema.set('toObject', { virtuals: true });
-PaymentSchema.set('toJSON', { virtuals: true });
+PaymentInstallmentSchema.set('toObject', { virtuals: true });
+PaymentInstallmentSchema.set('toJSON', { virtuals: true });

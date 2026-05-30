@@ -43,8 +43,7 @@ export class UserService {
 
     if (phone && phone !== user.phone) {
       const existing = await this.user.findOne({ phone, _id: { $ne: _id } });
-      if (existing && existing.phoneVerified)
-        throw new ConflictException('User with this phone number already exists.');
+      if (existing) throw new ConflictException('User with this phone number already exists.');
 
       updatePayload.phone = phone;
       updatePayload.phoneVerified = false;
@@ -87,7 +86,7 @@ export class UserService {
 
   public async createVerificationOtp(user: User, type: TokenType = TokenType.PHONE_VERIFICATION) {
     const otpCode = getRandomNumber();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    const expires_at = new Date(Date.now() + 10 * 60 * 1000);
 
     await this.token.deleteMany({ userId: user._id, type });
 
@@ -97,7 +96,7 @@ export class UserService {
       userId: user._id,
       token,
       type,
-      expiresAt,
+      expires_at,
     });
 
     const message = `Your otp code is ${token} valid for 10 minutes`;

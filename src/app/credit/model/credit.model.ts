@@ -8,7 +8,14 @@ import { ICredit } from '../types/credit.interface';
 
 export type CreditDocument = HydratedDocument<Credit>;
 
-@Schema({ collection: 'credits', versionKey: false, timestamps: true })
+@Schema({
+  collection: 'credits',
+  versionKey: false,
+  timestamps: {
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+  },
+})
 export class Credit extends Document implements ICredit {
   @ApiProperty({ description: 'Unique identifier for the credit', example: 'CRD-00001' })
   @Prop({ required: true, unique: true })

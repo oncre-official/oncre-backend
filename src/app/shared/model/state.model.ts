@@ -6,7 +6,10 @@ import { IState } from '../type/state-local.interface';
 
 export type StateDocument = HydratedDocument<State>;
 
-@Schema({ collection: 'states', versionKey: false, timestamps: true })
+@Schema({ collection: 'states', versionKey: false,   timestamps: {
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+  }, })
 export class State extends Document implements IState {
   @ApiProperty()
   @Prop({ type: String, required: true })

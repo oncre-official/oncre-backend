@@ -35,7 +35,7 @@ export class AuthService {
     const { phone } = payload;
 
     let user = await this.user.findOne({ phone });
-    if (user && user.phoneVerified) throw new ConflictException('User with this phone number already exists.');
+    if (user) throw new ConflictException('User with this phone number already exists.');
 
     if (!user) user = await this.user.create({ phone });
 
@@ -55,7 +55,6 @@ export class AuthService {
 
     const user = await this.user.findOne({ phone });
     if (!user) throw new NotFoundException('user does not exist');
-    if (user.phoneVerified) throw new ConflictException('User phone number already verified.');
 
     const otp = await this.userService.createVerificationOtp(user);
 
@@ -73,13 +72,12 @@ export class AuthService {
 
     const user = await this.user.findOne({ phone });
     if (!user) throw new NotFoundException('User with this phone number does not exist.');
-    if (user.phoneVerified) throw new BadRequestException('Phone number is already verified.');
 
     const token = await this.token.findOne({ type: TokenType.PHONE_VERIFICATION, token: otp });
     if (!token) throw new BadRequestException('Invalid OTP code.');
 
-    if (token.userId.toString() !== user._id.toString()) throw new BadRequestException('Invalid user OTP.');
-    if (token.expiresAt < new Date()) throw new BadRequestException('OTP has expired. Please request a new one.');
+    if (token.user_id.toString() !== user._id.toString()) throw new BadRequestException('Invalid user OTP.');
+    if (token.expires_at < new Date()) throw new BadRequestException('OTP has expired. Please request a new one.');
 
     const updated = await this.user.updateById(user._id, { phoneVerified: true, status: UserStatus.ACTIVE });
     await token.deleteOne();
@@ -128,12 +126,10 @@ export class AuthService {
     if (!user) throw new NotFoundException('User with this phone number does not exist.');
 
     if (!user.pin) throw new BadRequestException('User pin not set');
-    if (!user.phoneVerified) throw new BadRequestException('Phone number not verified');
+    if (!user) throw new BadRequestException('Phone number not verified');
 
     const isValidPin: boolean = await compareResource(pin, user.pin);
     if (!isValidPin) throw new BadRequestException('Incorrect pin provided');
-
-    user.pin = undefined;
 
     const jwt = this.jwt.sign(user.toJSON());
 
@@ -155,7 +151,6 @@ export class AuthService {
 
     const user = await this.user.findOne({ phone });
     if (!user) throw new NotFoundException('User with this phone number does not exist.');
-    if (!user.phoneVerified) throw new BadRequestException('Phone number not verified');
 
     const otp = await this.userService.createVerificationOtp(user, TokenType.PIN_RESET);
 
@@ -177,8 +172,8 @@ export class AuthService {
     const token = await this.token.findOne({ type: TokenType.PIN_RESET, token: otp });
     if (!token) throw new BadRequestException('Invalid OTP code.');
 
-    if (token.userId.toString() !== user._id.toString()) throw new BadRequestException('Invalid user OTP.');
-    if (token.expiresAt < new Date()) throw new BadRequestException('OTP has expired. Please request a new one.');
+    if (token.user_id.toString() !== user._id.toString()) throw new BadRequestException('Invalid user OTP.');
+    if (token.expires_at < new Date()) throw new BadRequestException('OTP has expired. Please request a new one.');
 
     const hashPin = await hashResource(pin);
 

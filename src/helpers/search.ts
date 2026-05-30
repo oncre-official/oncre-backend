@@ -19,14 +19,14 @@ export const searchQuery = (fields: string[], searchParam: string, query?: Recor
     return { [field]: { $regex: new RegExp(searchParam), $options: 'i' } };
   });
 
-  delete query.search;
+  delete query?.search;
 
   return { $or: mappedFields, ...query };
 };
 
 export const joinSearchQuery = (searchQuery: IJoinSearchQuery) => {
-  const { search, fields, query, joins } = searchQuery;
-  delete query.search;
+  const { search, fields = [], query = {}, joins = [] } = searchQuery;
+  delete query?.search;
 
   const pipeline: any[] = [];
 
@@ -73,7 +73,7 @@ export const joinSearchQueryNested = (searchQuery: IJoinSearchQuery): any[] => {
 
   if (Object.keys(q).length) pipeline.push({ $match: q });
 
-  const buildJoins = (joins: IJoinSearchConfig[], parentAs?: string) => {
+  const buildJoins = (joins: IJoinSearchConfig[] = [], parentAs?: string) => {
     for (const join of joins) {
       const { from, localField, foreignField, as, nestedJoins } = join;
 
@@ -93,7 +93,7 @@ export const joinSearchQueryNested = (searchQuery: IJoinSearchQuery): any[] => {
     const orConditions: any[] = [];
     for (const field of fields) orConditions.push({ [field]: { $regex: search, $options: 'i' } });
 
-    const buildSearch = (joins: IJoinSearchConfig[], parentAs?: string) => {
+    const buildSearch = (joins: IJoinSearchConfig[] = [], parentAs?: string) => {
       for (const join of joins) {
         const { searchFields, as, nestedJoins } = join;
 

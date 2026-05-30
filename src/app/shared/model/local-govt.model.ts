@@ -7,7 +7,10 @@ import { ILga } from '../type/state-local.interface';
 
 export type LgaDocument = HydratedDocument<Lga>;
 
-@Schema({ collection: 'lgas', versionKey: false, timestamps: true })
+@Schema({ collection: 'lgas', versionKey: false,   timestamps: {
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+  }, })
 export class Lga extends Document implements ILga {
   @ApiProperty()
   @Prop({ type: String, required: true })

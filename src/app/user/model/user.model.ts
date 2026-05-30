@@ -12,7 +12,10 @@ export type UserDocument = HydratedDocument<User>;
 @Schema({
   collection: 'users',
   versionKey: false,
-  timestamps: true,
+  timestamps: {
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+  },
   toJSON: { virtuals: true },
   toObject: { virtuals: true },
 })

@@ -8,7 +8,10 @@ import { IMessage } from '../types/message.interface';
 
 export type MessageDocument = HydratedDocument<Message>;
 
-@Schema({ collection: 'messages', versionKey: false, timestamps: true })
+@Schema({ collection: 'messages', versionKey: false,   timestamps: {
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+  }, })
 export class Message extends Document implements IMessage {
   @ApiProperty({ description: 'Unique identifier for the case', example: 'CA-00001' })
   @Prop({ required: false })

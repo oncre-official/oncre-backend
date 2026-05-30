@@ -7,7 +7,10 @@ import { ICustomer } from '../types/customer.interface';
 
 export type CustomerDocument = HydratedDocument<Customer>;
 
-@Schema({ collection: 'customers', versionKey: false, timestamps: true })
+@Schema({ collection: 'customers', versionKey: false,   timestamps: {
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+  }, })
 export class Customer extends Document implements ICustomer {
   @ApiProperty({ description: 'User ID associated with the customer', type: String, required: false })
   @Prop({ type: Types.ObjectId, ref: 'User', required: false })

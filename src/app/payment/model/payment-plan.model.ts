@@ -2,24 +2,22 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { ApiProperty } from '@nestjs/swagger';
 import { Document, HydratedDocument } from 'mongoose';
 
-import { CasePaymentStatus } from '@on/enum';
+import { IPaymentPlan, PaymentFrequency, PaymentPlanStatus } from '../types/payment-plan.interface';
 
-import { IPayment } from '../types/payment.interface';
-
-export type PaymentDocument = HydratedDocument<Payment>;
+export type PaymentPlanDocument = HydratedDocument<PaymentPlan>;
 
 @Schema({
-  collection: 'payments',
+  collection: 'payment_plans',
   versionKey: false,
   timestamps: {
     createdAt: 'created_at',
     updatedAt: 'updated_at',
   },
 })
-export class Payment extends Document implements IPayment {
+export class PaymentPlan extends Document implements IPaymentPlan {
   @ApiProperty()
   @Prop({ type: String })
-  payment_id: string;
+  plan_id: string;
 
   @ApiProperty({ description: 'Auto-generated: CA-00001' })
   @Prop({ required: true, unique: true })
@@ -27,15 +25,19 @@ export class Payment extends Document implements IPayment {
 
   @ApiProperty({ required: false })
   @Prop({ required: false })
-  amount: number;
+  total_amount: number;
 
   @ApiProperty({ required: false })
   @Prop({ required: false })
-  amount_paid: number;
+  total_paid: number;
 
   @ApiProperty({ required: false })
-  @Prop({ enum: CasePaymentStatus, required: false })
-  status: CasePaymentStatus;
+  @Prop({ enum: PaymentFrequency, required: false })
+  frequency: PaymentFrequency;
+
+  @ApiProperty({ required: false })
+  @Prop({ enum: PaymentPlanStatus, required: false })
+  status: PaymentPlanStatus;
 
   @ApiProperty({ required: false })
   @Prop({ Type: String, required: false })
@@ -54,7 +56,7 @@ export class Payment extends Document implements IPayment {
   paid_at: Date | null;
 }
 
-export const PaymentSchema = SchemaFactory.createForClass(Payment);
+export const PaymentPlanSchema = SchemaFactory.createForClass(PaymentPlan);
 
-PaymentSchema.set('toObject', { virtuals: true });
-PaymentSchema.set('toJSON', { virtuals: true });
+PaymentPlanSchema.set('toObject', { virtuals: true });
+PaymentPlanSchema.set('toJSON', { virtuals: true });

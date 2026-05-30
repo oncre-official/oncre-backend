@@ -6,7 +6,14 @@ import { ICase, RecoveryMode } from '../types/case.interface';
 
 export type CaseDocument = HydratedDocument<Case>;
 
-@Schema({ collection: 'cases', versionKey: false, timestamps: true })
+@Schema({
+  collection: 'cases',
+  versionKey: false,
+  timestamps: {
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+  },
+})
 export class Case extends Document implements ICase {
   @ApiProperty({ description: 'Auto-generated: CA-00001' })
   @Prop({ required: true, unique: true })

@@ -9,11 +9,18 @@ import { IToken } from '../types/token.interface';
 
 export type TokenDocument = HydratedDocument<Token>;
 
-@Schema({ collection: 'tokens', versionKey: false, timestamps: true })
+@Schema({
+  collection: 'tokens',
+  versionKey: false,
+  timestamps: {
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+  },
+})
 export class Token extends Document implements IToken {
   @ApiProperty()
   @Prop({ type: Types.ObjectId, ref: 'User' })
-  userId: ObjectId;
+  user_id: ObjectId;
 
   @ApiProperty()
   @Prop({ enum: TokenType, required: true })
@@ -25,7 +32,7 @@ export class Token extends Document implements IToken {
 
   @ApiProperty()
   @Prop({ type: Date, default: () => new Date(Date.now() + 10 * 60 * 1000) })
-  expiresAt: Date;
+  expires_at: Date;
 }
 
 export const TokenSchema = SchemaFactory.createForClass(Token);

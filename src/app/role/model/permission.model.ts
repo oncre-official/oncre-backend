@@ -6,7 +6,10 @@ import { IPermission } from '../types/permission.interface';
 
 export type PermissionDocument = HydratedDocument<Permission>;
 
-@Schema({ collection: 'permissions', versionKey: false, timestamps: true })
+@Schema({ collection: 'permissions', versionKey: false,   timestamps: {
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+  }, })
 export class Permission extends Document implements IPermission {
   @ApiProperty()
   @Prop({ type: String, required: true })
