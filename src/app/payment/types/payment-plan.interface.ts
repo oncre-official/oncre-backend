@@ -36,5 +36,5 @@ export interface IPaymentInstallment extends IBaseType {
   payment_url: string;
   reference: string;
   amount_paid: number;
-  paid_at: Date | null;
+  paid_at: Date ;
 }

@@ -47,7 +47,7 @@ export class Message extends Document implements IMessage {
 
   @ApiProperty({ example: EscalationTier.TIER_1 })
   @Prop({ required: false, enum: EscalationTier })
-  message_tier: EscalationTier | null;
+  message_tier: EscalationTier ;
 
   @ApiProperty()
   @Prop({ Type: Number, required: false })
@@ -67,7 +67,7 @@ export class Message extends Document implements IMessage {
 
   @ApiProperty()
   @Prop({ Type: Date, required: false })
-  sent_at: Date | null;
+  sent_at: Date ;
 
   @ApiProperty({ example: MessageDeliveryStatus.SCHEDULED })
   @Prop({ required: false, enum: MessageDeliveryStatus })
@@ -75,15 +75,15 @@ export class Message extends Document implements IMessage {
 
   @ApiProperty()
   @Prop({ required: false, Type: String })
-  termii_message_id: string | null;
+  termii_message_id: string ;
 
   @ApiProperty()
   @Prop({ required: false, Type: String })
-  error_details: string | null;
+  error_details: string ;
 
   @ApiProperty()
   @Prop({ required: false, Type: String })
-  cancelled_reason: string | null;
+  cancelled_reason: string ;
 }
 
 export const MessageSchema = SchemaFactory.createForClass(Message);

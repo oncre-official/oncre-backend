@@ -50,11 +50,11 @@ export class Repayment extends Document implements IRepayment {
     example: '2024-03-01T00:00:00Z',
     nullable: false,
   })
-  new_due_date: Date | null;
+  new_due_date: Date ;
 
   @ApiProperty({ description: 'Current escalation tier', example: EscalationTier.TIER_1, nullable: false })
   @Prop({ required: false, enum: EscalationTier })
-  escalation_tier: EscalationTier | null;
+  escalation_tier: EscalationTier ;
 
   @ApiProperty({ description: 'Indicates if escalation has been approved', example: false })
   @Prop({ required: false })
@@ -65,7 +65,7 @@ export class Repayment extends Document implements IRepayment {
     example: '2024-01-20T00:00:00Z',
     nullable: false,
   })
-  escalation_start_date: Date | null;
+  escalation_start_date: Date ;
 }
 
 export const RepaymentSchema = SchemaFactory.createForClass(Repayment);

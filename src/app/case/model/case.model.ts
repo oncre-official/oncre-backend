@@ -101,7 +101,7 @@ export class Case extends Document implements ICase {
 
   @ApiProperty({ required: false })
   @Prop({ Type: String, required: false })
-  payment_plan_id?: string | null;
+  payment_plan_id?: string ;
 
   @ApiProperty({ required: false })
   @Prop({ Type: Number, required: false })

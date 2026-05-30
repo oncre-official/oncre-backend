@@ -20,20 +20,20 @@ export interface ICredit extends IBaseType {
   // Messaging state
   free_reengagement_active: boolean;
   free_reengagement_used: boolean;
-  free_reengagement_started_at: Date | null;
+  free_reengagement_started_at: Date;
   paid_part_reengagement_active: boolean;
-  new_due_date: Date | null;
+  new_due_date: Date;
 
   // Escalation state
-  escalation_tier: EscalationTier | null;
+  escalation_tier: EscalationTier;
   escalation_approved: boolean;
-  escalation_start_date: Date | null;
+  escalation_start_date: Date;
 
   // Old debt tracking
   is_old_debt: boolean;
   introduced_at: Date;
 
   // Meta
-  active_message_path: MessageType | null;
+  active_message_path: MessageType;
   messaging_stopped: boolean;
 }

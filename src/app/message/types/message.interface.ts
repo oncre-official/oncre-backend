@@ -10,14 +10,14 @@ export interface IMessage extends IBaseType {
   debtor_phone?: string;
   day?: number;
   message_type: MessageType;
-  message_tier: EscalationTier | null;
+  message_tier: EscalationTier ;
   message_index: number;
   action_type: ActionType;
   message_body: string;
   scheduled_for: Date;
-  sent_at: Date | null;
+  sent_at: Date ;
   delivery_status: MessageDeliveryStatus;
-  termii_message_id: string | null;
-  error_details: string | null;
-  cancelled_reason: string | null;
+  termii_message_id: string ;
+  error_details: string ;
+  cancelled_reason: string ;
 }

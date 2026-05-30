@@ -10,5 +10,5 @@ export interface IPayment extends IBaseType {
   reference: string;
   provider?: string;
   payment_url: string;
-  paid_at: Date | null;
+  paid_at: Date ;
 }

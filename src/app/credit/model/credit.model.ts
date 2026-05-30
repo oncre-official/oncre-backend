@@ -46,7 +46,7 @@ export class Credit extends Document implements ICredit {
   credit_date: Date;
 
   @ApiProperty({ description: 'Due date for the credit', example: '2024-02-01T00:00:00Z' })
-  @Prop({ required: false, Type: Date })
+  @Prop({ required: false })
   due_date: Date;
 
   @ApiProperty({ description: 'Location associated with the credit', example: '123 Main St, City, Country' })
@@ -81,7 +81,7 @@ export class Credit extends Document implements ICredit {
     nullable: false,
   })
   @Prop({ required: false })
-  free_reengagement_started_at: Date | null;
+  free_reengagement_started_at: Date;
 
   @ApiProperty({ description: 'Indicates if paid part re-engagement is active', example: false })
   @Prop({ required: false })
@@ -92,12 +92,12 @@ export class Credit extends Document implements ICredit {
     example: '2024-03-01T00:00:00Z',
     nullable: false,
   })
-  new_due_date: Date | null;
+  new_due_date: Date;
 
   // Escalation state
   @ApiProperty({ description: 'Current escalation tier', example: EscalationTier.TIER_1, nullable: false })
   @Prop({ required: false, enum: EscalationTier })
-  escalation_tier: EscalationTier | null;
+  escalation_tier: EscalationTier;
 
   @ApiProperty({ description: 'Indicates if escalation has been approved', example: false })
   @Prop({ required: false })
@@ -108,7 +108,7 @@ export class Credit extends Document implements ICredit {
     example: '2024-01-20T00:00:00Z',
     nullable: false,
   })
-  escalation_start_date: Date | null;
+  escalation_start_date: Date;
 
   // Old debt tracking
   @ApiProperty({ description: 'Indicates if the credit is an old debt', example: false })
@@ -126,7 +126,7 @@ export class Credit extends Document implements ICredit {
     nullable: false,
   })
   @Prop({ required: false, enum: MessageType })
-  active_message_path: MessageType | null;
+  active_message_path: MessageType;
 
   @ApiProperty({ description: 'Indicates if messaging has been stopped', example: false })
   @Prop({ required: false })
@@ -134,20 +134,6 @@ export class Credit extends Document implements ICredit {
 }
 
 export const CreditSchema = SchemaFactory.createForClass(Credit);
-
-CreditSchema.virtual('merchant', {
-  ref: 'Merchant',
-  localField: 'merchant_id',
-  foreignField: 'merchant_id',
-  justOne: true,
-});
-
-CreditSchema.virtual('customer', {
-  ref: 'Customer',
-  localField: 'customer_key',
-  foreignField: 'customer_key',
-  justOne: true,
-});
 
 CreditSchema.set('toObject', { virtuals: true });
 CreditSchema.set('toJSON', { virtuals: true });

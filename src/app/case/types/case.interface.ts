@@ -33,6 +33,6 @@ export interface ICase extends IBaseType {
   activated_at: Date;
 
   recovery_mode?: RecoveryMode;
-  payment_plan_id?: string | null;
+  payment_plan_id?: string;
   outstanding_balance?: number;
 }

@@ -9,8 +9,8 @@ export interface IRepayment extends IBaseType {
   payment_type: string;
   event_type: EventType;
   paid_part_reengagement: boolean;
-  new_due_date: Date | null;
-  escalation_tier: EscalationTier | null;
+  new_due_date: Date ;
+  escalation_tier: EscalationTier ;
   merchant_approval: boolean;
-  escalation_start_date: Date | null;
+  escalation_start_date: Date ;
 }
