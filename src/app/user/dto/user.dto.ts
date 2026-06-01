@@ -18,7 +18,7 @@ export class UserDto {
 
   @ApiProperty({ description: 'User Role Id' })
   @IsMongoId()
-  roleId: ObjectId;
+  role_id: ObjectId;
 
   @ApiProperty({ description: 'User Password' })
   @IsString()

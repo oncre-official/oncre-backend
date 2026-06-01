@@ -13,6 +13,6 @@ export interface ResponseDTO {
 
 export interface IBaseType {
   _id?: ObjectId;
-  createdAt?: Date;
-  updatedAt?: Date;
+  created_at?: Date;
+  updated_at?: Date;
 }

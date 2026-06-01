@@ -5,6 +5,7 @@ import { TokenType, UserStatus } from '@on/enum';
 import { compareResource, hashResource } from '@on/helpers/password';
 import { ServiceResponse } from '@on/utils/types';
 
+import { RoleRepository } from '../role/repository/role.repository';
 import { LgaRepository } from '../shared/repository/local-govt.repository';
 import { StateRepository } from '../shared/repository/state.repository';
 import { User } from '../user/model/user.model';
@@ -22,6 +23,7 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly lga: LgaRepository,
     private readonly user: UserRepository,
+    private readonly role: RoleRepository,
     private readonly token: TokenRepository,
     private readonly state: StateRepository,
     private readonly userService: UserService,
@@ -131,7 +133,8 @@ export class AuthService {
     const isValidPin: boolean = await compareResource(pin, user.pin);
     if (!isValidPin) throw new BadRequestException('Incorrect pin provided');
 
-    const jwt = this.jwt.sign(user.toJSON());
+    const role = await this.role.findById(user.role_id, { populate: [{ path: 'permissions' }] });
+    const jwt = this.jwt.sign({ ...user.toJSON(), role });
 
     const data = {
       user,

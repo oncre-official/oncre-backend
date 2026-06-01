@@ -1,8 +1,9 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
 import { ObjectId } from 'mongodb';
 import { Document, HydratedDocument, Types } from 'mongoose';
 
+import { Role } from '@on/app/role/model/role.model';
 import { UserStatus } from '@on/enum';
 
 import { IUser } from '../types/user.interface';
@@ -59,14 +60,17 @@ export class User extends Document implements IUser {
   @ApiProperty()
   @Prop({ type: Date })
   last_login: Date;
+
+  /**
+   * UTILITY
+   */
+  @ApiHideProperty()
+  role: Role;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
 
 UserSchema.index({ country_code: 1, phone: 1 }, { unique: true });
-
-UserSchema.index({ email: 1 });
-UserSchema.index({ country_code: 1, phone: 1 });
 
 UserSchema.virtual('phoneNumber').get(function () {
   return `${this.country_code}${this.phone}`;

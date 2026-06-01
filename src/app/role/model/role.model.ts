@@ -1,15 +1,21 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
 import { Document, HydratedDocument } from 'mongoose';
 
 import { IRole } from '../types/role.interface';
 
+import { Permission } from './permission.model';
+
 export type RoleDocument = HydratedDocument<Role>;
 
-@Schema({ collection: 'roles', versionKey: false,   timestamps: {
+@Schema({
+  collection: 'roles',
+  versionKey: false,
+  timestamps: {
     createdAt: 'created_at',
     updatedAt: 'updated_at',
-  }, })
+  },
+})
 export class Role extends Document implements IRole {
   @ApiProperty()
   @Prop({ type: String, required: true })
@@ -18,6 +24,12 @@ export class Role extends Document implements IRole {
   @ApiProperty()
   @Prop({ type: String })
   description?: string;
+
+  /**
+   * RELATIONSHIPS
+   */
+  @ApiHideProperty()
+  permissions: Permission[];
 }
 
 export const RoleSchema = SchemaFactory.createForClass(Role);
@@ -27,7 +39,7 @@ RoleSchema.index({ name: 1 }, { unique: true });
 RoleSchema.virtual('permissions', {
   ref: 'RolePermission',
   localField: '_id',
-  foreignField: 'roleId',
+  foreignField: 'role_id',
   justOne: false,
 });
 

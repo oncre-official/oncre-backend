@@ -3,6 +3,7 @@ import { JwtModule } from '@nestjs/jwt';
 
 import { config } from '@on/config';
 
+import { RoleModule } from '../role/role.module';
 import { SharedModule } from '../shared/shared.module';
 import { UserModule } from '../user/user.module';
 
@@ -13,6 +14,7 @@ import { JwtStrategy } from './strategy/jwt.strategy';
 @Module({
   imports: [
     UserModule,
+    RoleModule,
     SharedModule,
     JwtModule.register({
       global: true,

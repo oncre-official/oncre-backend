@@ -9,6 +9,7 @@ import { RolePermissionRepository } from './repository/role-permission.repositor
 import { RoleRepository } from './repository/role.repository';
 import { RoleController } from './role.controller';
 import { RoleService } from './role.service';
+import { RolePermissionSeeder } from './seeder/seeder';
 
 @Module({
   imports: [
@@ -19,7 +20,14 @@ import { RoleService } from './role.service';
     ]),
   ],
   controllers: [RoleController],
-  providers: [RoleRepository, RoleService, RoleRepository, PermissionRepository, RolePermissionRepository],
+  providers: [
+    RoleRepository,
+    RoleService,
+    RolePermissionSeeder,
+    RoleRepository,
+    PermissionRepository,
+    RolePermissionRepository,
+  ],
   exports: [RoleRepository, RoleService, RoleRepository, PermissionRepository, RolePermissionRepository],
 })
 export class RoleModule {}

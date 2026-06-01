@@ -26,4 +26,4 @@ export class RolePermission extends Document implements IRolePermission {
 
 export const RolePermissionSchema = SchemaFactory.createForClass(RolePermission);
 
-RolePermissionSchema.index({ roleId: 1, permissionId: 1 }, { unique: true });
+RolePermissionSchema.index({ role_id: 1, permission_id: 1 }, { unique: true });
