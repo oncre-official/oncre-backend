@@ -54,6 +54,10 @@ export class User extends Document implements IUser {
   email_verified: boolean;
 
   @ApiProperty()
+  @Prop({ type: Boolean, required: true, default: false })
+  password_changed: boolean;
+
+  @ApiProperty()
   @Prop({ enum: UserStatus, required: true, default: UserStatus.INACTIVE })
   status: UserStatus;
 

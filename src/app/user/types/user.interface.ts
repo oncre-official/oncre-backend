@@ -12,6 +12,7 @@ export interface IUser extends IBaseType {
   pin: string;
   phone_verified: boolean;
   email_verified: boolean;
+  password_changed: boolean;
   status: UserStatus;
   last_login: Date;
 }

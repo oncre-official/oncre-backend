@@ -1,12 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString } from 'class-validator';
 
-export class MerchantDto {
-  @ApiProperty({ description: 'Unique identifier for the merchant', example: 'MER-00001' })
-  @IsString()
-  @IsNotEmpty()
-  merchant_id: string;
-
+export class CreateMerchantDto {
   @ApiProperty({ description: 'Personal name of the merchant', example: 'John Doe' })
   @IsString()
   @IsNotEmpty()
@@ -26,4 +21,11 @@ export class MerchantDto {
   @IsString()
   @IsNotEmpty()
   location: string;
+}
+
+export class MerchantDto extends CreateMerchantDto {
+  @ApiProperty({ description: 'Unique identifier for the merchant', example: 'MER-00001' })
+  @IsString()
+  @IsNotEmpty()
+  merchant_id: string;
 }

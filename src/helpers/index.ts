@@ -68,3 +68,23 @@ export function formatNoWithoutZero(phone: string): string {
 
   throw new BadRequestException('Invalid phone number format. Must be 10 or 11 digits starting with 0.');
 }
+
+// ─── Currency ────────────────────────────────────────────────
+
+export function formatNaira(amount: number): string {
+  return `₦${amount.toLocaleString('en-NG', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+export function capitalize(str: string): string {
+  return str
+    .split(' ')
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ');
+}
+
+export function truncate(str: string, max: number): string {
+  return str.length > max ? str.slice(0, max) + '…' : str;
+}

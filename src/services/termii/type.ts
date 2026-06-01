@@ -50,3 +50,23 @@ export interface OTPVerificationResponse {
   verified: string;
   msisdn: string;
 }
+
+export interface SMSResult {
+  success: boolean;
+  message_id: string | null;
+  error: string | null;
+  raw_response?: any;
+}
+
+export interface TermiiSendResponse {
+  code: string;
+  message_id: string;
+  message: string;
+  balance: number;
+  user: string;
+}
+
+export interface TermiiError {
+  message: string;
+  code?: string;
+}

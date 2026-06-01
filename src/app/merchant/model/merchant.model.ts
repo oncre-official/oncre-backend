@@ -7,10 +7,14 @@ import { IMerchant } from '../types/merchant.interface';
 
 export type MerchantDocument = HydratedDocument<Merchant>;
 
-@Schema({ collection: 'merchants', versionKey: false,   timestamps: {
+@Schema({
+  collection: 'merchants',
+  versionKey: false,
+  timestamps: {
     createdAt: 'created_at',
     updatedAt: 'updated_at',
-  }, })
+  },
+})
 export class Merchant extends Document implements IMerchant {
   @ApiProperty({ description: 'User ID associated with the merchant', type: String, required: false })
   @Prop({ type: Types.ObjectId, ref: 'User', required: false })
