@@ -23,19 +23,23 @@ export class AuthService {
   ) {}
 
   public async signin(payload: LoginDto): Promise<ServiceResponse<IUserToken>> {
-    const { phone, password, email } = payload;
+    const { value, password } = payload;
 
     const conditions: any[] = [];
 
-    if (phone) {
-      const normalizedPhone = formatPhoneWithCode(phone);
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+
+    if (isEmail) conditions.push({ email: value.toLowerCase().trim() });
+    else {
+      const normalizedPhone = formatPhoneWithCode(value);
+      console.log(normalizedPhone, 'Normalized phone number');
+
       const { code, phone: number } = parsePhone(normalizedPhone);
 
       conditions.push({ country_code: code, phone: number });
     }
 
-    if (email) conditions.push({ email: email.toLowerCase().trim() });
-    if (!conditions.length) throw new BadRequestException('Email or phone number is required.');
+    console.log('Conditions for signin:', conditions);
 
     const user = await this.user.findOne({ $or: conditions });
     if (!user) throw new NotFoundException('User with this phone number or email does not exist.');

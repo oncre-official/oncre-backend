@@ -15,7 +15,12 @@ export class SharedAuthDto implements ISharedAuth {
   email: string;
 }
 
-export class LoginDto extends SharedAuthDto implements ILogin {
+export class LoginDto implements ILogin {
+  @ApiProperty({ description: 'User email or phone number' })
+  @IsString()
+  @IsNotEmpty()
+  value: string;
+
   @ApiProperty({ description: 'User Password' })
   @IsString()
   @IsNotEmpty()

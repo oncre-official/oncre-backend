@@ -5,7 +5,8 @@ export interface ISharedAuth {
   email?: string;
 }
 
-export interface ILogin extends ISharedAuth {
+export interface ILogin {
+  value: string;
   password: string;
 }
 
