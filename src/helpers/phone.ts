@@ -37,6 +37,14 @@ export function parsePhone(fullPhone: string): ParsedPhone {
   return { code: DEFAULT_COUNTRY_CODE, phone: cleaned };
 }
 
+export function formatPhoneWithCode(phone: string, code: string = DEFAULT_COUNTRY_CODE): string {
+  let cleaned = phone.replace(/\D/g, '');
+
+  cleaned = cleaned.replace(/^0+/, '');
+
+  return `${code}${cleaned}`;
+}
+
 // ─── Phone Normalization ─────────────────────────────────────
 export function normalizePhone(phone: string | number | null | undefined): string {
   if (!phone && phone !== 0) return '';
