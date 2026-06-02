@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
 import { MongooseModule } from '@nestjs/mongoose';
 
+import { AdminModule } from './app/admin/admin.module';
 import { AuthModule } from './app/auth/auth.module';
 import { CaseModule } from './app/case/case.module';
 import { CreditModule } from './app/credit/credit.module';
@@ -29,6 +30,7 @@ import { HttpExceptionFilter } from './handlers/exceptions/http-exception.filter
     MerchantModule,
     MessageModule,
     PaymentModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [
