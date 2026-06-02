@@ -1,44 +1,32 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, Length, Matches } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
-import { ILogin, IRegister, IResetPin, ISetPin, IVerifyPhone } from '../types/auth.interface';
+import { ILogin, IResetPassword, ISharedAuth } from '../types/auth.interface';
 
-export class RegisterDto implements IRegister {
-  @ApiProperty({ description: 'User phone number' })
+export class SharedAuthDto implements ISharedAuth {
+  @ApiPropertyOptional({ description: 'User phone number' })
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   phone: string;
+
+  @ApiPropertyOptional({ description: 'User email address' })
+  @IsString()
+  @IsOptional()
+  email: string;
 }
 
-export class LoginDto extends RegisterDto implements ILogin {
-  @ApiProperty({ description: 'User Pin' })
-  @Length(4, 4)
-  @Matches(/^\d{4}$/)
-  @IsNotEmpty()
-  pin: string;
-}
-
-export class VerifyPhoneDto extends RegisterDto implements IVerifyPhone {
-  @ApiProperty({ description: 'User OTP code' })
+export class LoginDto extends SharedAuthDto implements ILogin {
+  @ApiProperty({ description: 'User Password' })
   @IsString()
   @IsNotEmpty()
-  otp: string;
+  password: string;
 }
 
-export class SetPinDto implements ISetPin {
-  @ApiProperty({ description: 'User Pin' })
-  @Length(4, 4)
-  @Matches(/^\d{4}$/)
+export class ResetPasswordDto extends SharedAuthDto implements IResetPassword {
+  @ApiProperty({ description: 'New User Password' })
+  @IsString()
   @IsNotEmpty()
-  pin: string;
-}
-
-export class ResetPinDto extends RegisterDto implements IResetPin {
-  @ApiProperty({ description: 'User Pin' })
-  @Length(4, 4)
-  @Matches(/^\d{4}$/)
-  @IsNotEmpty()
-  pin: string;
+  newPassword: string;
 
   @ApiProperty({ description: 'User OTP code' })
   @IsString()
