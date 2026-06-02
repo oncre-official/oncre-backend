@@ -6,9 +6,6 @@ import { compareResource, hashResource } from '@on/helpers/password';
 import { formatPhoneWithCode, parsePhone } from '@on/helpers/phone';
 import { ServiceResponse } from '@on/utils/types';
 
-import { RoleRepository } from '../role/repository/role.repository';
-import { LgaRepository } from '../shared/repository/local-govt.repository';
-import { StateRepository } from '../shared/repository/state.repository';
 import { TokenRepository } from '../user/repository/token.repository';
 import { UserRepository } from '../user/repository/user.repository';
 
@@ -20,28 +17,33 @@ import { IUserToken } from './types/auth.interface';
 export class AuthService {
   constructor(
     private readonly jwt: JwtService,
-    private readonly lga: LgaRepository,
     private readonly user: UserRepository,
-    private readonly role: RoleRepository,
     private readonly token: TokenRepository,
-    private readonly state: StateRepository,
     private readonly userService: UserService,
   ) {}
 
   public async signin(payload: LoginDto): Promise<ServiceResponse<IUserToken>> {
     const { phone, password, email } = payload;
 
-    const normalizedPhone = formatPhoneWithCode(phone);
-    const { code, phone: number } = parsePhone(normalizedPhone);
+    const conditions: any[] = [];
 
-    const user = await this.user.findOne({ $or: [{ country_code: code, phone: number }, { email }] });
+    if (phone) {
+      const normalizedPhone = formatPhoneWithCode(phone);
+      const { code, phone: number } = parsePhone(normalizedPhone);
+
+      conditions.push({ country_code: code, phone: number });
+    }
+
+    if (email) conditions.push({ email: email.toLowerCase().trim() });
+    if (!conditions.length) throw new BadRequestException('Email or phone number is required.');
+
+    const user = await this.user.findOne({ $or: conditions });
     if (!user) throw new NotFoundException('User with this phone number or email does not exist.');
 
     const isValidPassword: boolean = await compareResource(password, user.password);
     if (!isValidPassword) throw new BadRequestException('Incorrect password provided');
 
-    const role = await this.role.findById(user.role_id, { populate: [{ path: 'permissions' }] });
-    const jwt = this.jwt.sign({ ...user.toJSON(), role });
+    const jwt = this.jwt.sign({ ...user.toJSON() });
 
     const data = {
       user,
