@@ -1,7 +1,7 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 
 import { generatePassword } from '@on/helpers/password';
-import { formatPhoneWithCode, parsePhone } from '@on/helpers/phone';
+import { buildUserLookupQueryFromPayload } from '@on/helpers/user';
 import { QueryDto } from '@on/utils/dto/query.dto';
 import { ServiceResponse } from '@on/utils/types';
 
@@ -38,13 +38,12 @@ export class AdminService {
     const role = await this.role.findById(role_id);
     if (!role) throw new NotFoundException('Role not found');
 
-    const normalizedPhone = formatPhoneWithCode(phone, country_code);
-    const { code, phone: number } = parsePhone(normalizedPhone);
+    const query = buildUserLookupQueryFromPayload({ phone, country_code, email });
 
-    const userExists = await this.user.findOne({ $or: [{ country_code: code, phone: number }, { email }] });
+    const userExists = await this.user.findOne(query);
     if (userExists) throw new ConflictException('User with this phone or email already exists');
 
-    const [hashedPassword, password] = await generatePassword();
+    const [password, hashedPassword] = await generatePassword();
 
     const user = await this.user.create({
       ...payload,

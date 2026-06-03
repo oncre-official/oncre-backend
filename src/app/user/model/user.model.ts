@@ -22,11 +22,11 @@ export type UserDocument = HydratedDocument<User>;
 })
 export class User extends Document implements IUser {
   @ApiProperty()
-  @Prop({ type: String, required: true })
+  @Prop({ type: String, required: true, default: '234' })
   country_code: string;
 
   @ApiProperty()
-  @Prop({ type: String, required: true, unique: true })
+  @Prop({ type: String, required: false })
   phone: string;
 
   @ApiProperty()
