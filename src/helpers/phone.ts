@@ -1,10 +1,9 @@
+import { DEFAULT_COUNTRY_CODE, SUPPORTED_COUNTRY_CODES } from '@on/app/data/country';
+
 interface ParsedPhone {
   code: string;
   phone: string;
 }
-
-const DEFAULT_COUNTRY_CODE = '234';
-const COUNTRY_CODE_LENGTHS = [1, 2, 3, 4];
 
 export function formatFullPhone(code: string, phone: string): string {
   return `${code}${phone}`;
@@ -15,34 +14,46 @@ export function formatDisplayPhone(code: string, phone: string): string {
 }
 
 export function parsePhone(fullPhone: string): ParsedPhone {
-  let cleaned = fullPhone.replace(/\D/g, '');
+  let cleaned = fullPhone.trim();
 
-  const hasLeadingZero = cleaned.startsWith('0');
-  if (hasLeadingZero) cleaned = cleaned.replace(/^0+/, '');
-
-  for (const length of COUNTRY_CODE_LENGTHS) {
-    if (cleaned.length > length) {
-      const potentialCode = cleaned.substring(0, length);
-      const remainingPhone = cleaned.substring(length);
-
-      if (remainingPhone.length >= 7) {
-        return {
-          code: potentialCode,
-          phone: remainingPhone,
-        };
-      }
-    }
+  if (cleaned.startsWith('+')) {
+    cleaned = cleaned.substring(1);
   }
 
-  return { code: DEFAULT_COUNTRY_CODE, phone: cleaned };
+  cleaned = cleaned.replace(/\D/g, '');
+
+  if (cleaned.startsWith('0')) {
+    return {
+      code: DEFAULT_COUNTRY_CODE,
+      phone: cleaned.replace(/^0+/, ''),
+    };
+  }
+
+  const countryCode = SUPPORTED_COUNTRY_CODES.find((code) => cleaned.startsWith(code));
+
+  if (countryCode) {
+    return {
+      code: countryCode,
+      phone: cleaned.slice(countryCode.length),
+    };
+  }
+
+  return {
+    code: DEFAULT_COUNTRY_CODE,
+    phone: cleaned,
+  };
 }
 
 export function formatPhoneWithCode(phone: string, code: string = DEFAULT_COUNTRY_CODE): string {
-  let cleaned = phone.replace(/\D/g, '');
+  const cleaned = phone.replace(/\D/g, '');
 
-  cleaned = cleaned.replace(/^0+/, '');
+  if (cleaned.startsWith(code)) return cleaned;
 
-  return `${code}${cleaned}`;
+  if (cleaned.startsWith('0')) return `${code}${cleaned.slice(1)}`;
+
+  if (cleaned.length === 10) return `${code}${cleaned}`;
+
+  return cleaned;
 }
 
 // ─── Phone Normalization ─────────────────────────────────────

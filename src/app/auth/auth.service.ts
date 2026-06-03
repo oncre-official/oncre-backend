@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 
 import { TokenType } from '@on/enum';
 import { compareResource, hashResource } from '@on/helpers/password';
-import { formatPhoneWithCode, parsePhone } from '@on/helpers/phone';
+import { buildUserLookupQuery } from '@on/helpers/user';
 import { ServiceResponse } from '@on/utils/types';
 
 import { TokenRepository } from '../user/repository/token.repository';
@@ -25,21 +25,8 @@ export class AuthService {
   public async signin(payload: LoginDto): Promise<ServiceResponse<IUserToken>> {
     const { value, password } = payload;
 
-    const conditions: any[] = [];
-
-    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-
-    if (isEmail) conditions.push({ email: value.toLowerCase().trim() });
-    else {
-      const normalizedPhone = formatPhoneWithCode(value);
-      console.log(normalizedPhone, 'Normalized phone number');
-
-      const { code, phone: number } = parsePhone(normalizedPhone);
-
-      conditions.push({ country_code: code, phone: number });
-    }
-
-    console.log('Conditions for signin:', conditions);
+    const userLookup = buildUserLookupQuery(value);
+    const conditions = [userLookup];
 
     const user = await this.user.findOne({ $or: conditions });
     if (!user) throw new NotFoundException('User with this phone number or email does not exist.');
@@ -58,15 +45,17 @@ export class AuthService {
   }
 
   public async forgetPassword(payload: SharedAuthDto): Promise<ServiceResponse<any>> {
-    const { phone, email } = payload;
+    const { value } = payload;
 
-    const user = await this.user.findOne({ $or: [{ phone }, { email }] });
+    const userLookup = buildUserLookupQuery(value);
+    const conditions = [userLookup];
+
+    const user = await this.user.findOne({ $or: conditions });
     if (!user) throw new NotFoundException('User with this phone number or email does not exist.');
 
     const otp = await this.userService.createVerificationOtp(user, TokenType.PIN_RESET);
 
     const data = {
-      phone,
       userId: user._id,
       otp,
     };
@@ -75,9 +64,12 @@ export class AuthService {
   }
 
   public async resetPassword(payload: ResetPasswordDto): Promise<ServiceResponse<IUserToken>> {
-    const { newPassword, otp, phone, email } = payload;
+    const { newPassword, otp, value } = payload;
 
-    const user = await this.user.findOne({ $or: [{ phone }, { email }] });
+    const userLookup = buildUserLookupQuery(value);
+    const conditions = [userLookup];
+
+    const user = await this.user.findOne({ $or: conditions });
     if (!user) throw new NotFoundException('User with this phone number or email does not exist.');
 
     const token = await this.token.findOne({ type: TokenType.PIN_RESET, token: otp });

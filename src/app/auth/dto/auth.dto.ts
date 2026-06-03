@@ -1,26 +1,16 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { IsNotEmpty, IsString } from 'class-validator';
 
 import { ILogin, IResetPassword, ISharedAuth } from '../types/auth.interface';
 
 export class SharedAuthDto implements ISharedAuth {
-  @ApiPropertyOptional({ description: 'User phone number' })
-  @IsString()
-  @IsOptional()
-  phone: string;
-
-  @ApiPropertyOptional({ description: 'User email address' })
-  @IsString()
-  @IsOptional()
-  email: string;
-}
-
-export class LoginDto implements ILogin {
   @ApiProperty({ description: 'User email or phone number' })
   @IsString()
   @IsNotEmpty()
   value: string;
+}
 
+export class LoginDto extends SharedAuthDto implements ILogin {
   @ApiProperty({ description: 'User Password' })
   @IsString()
   @IsNotEmpty()

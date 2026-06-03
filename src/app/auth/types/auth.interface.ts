@@ -1,12 +1,10 @@
 import { User } from '@on/app/user/model/user.model';
 
 export interface ISharedAuth {
-  phone?: string;
-  email?: string;
+  value: string;
 }
 
-export interface ILogin {
-  value: string;
+export interface ILogin extends ISharedAuth {
   password: string;
 }
 
