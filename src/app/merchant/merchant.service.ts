@@ -92,12 +92,14 @@ export class MerchantService {
 
     const merchantId = await this.shared.generateSequentialId('merchant_id', 'MER', 5);
 
-    const merchant = await this.merchant.create({
+    const merchantPayload = {
       ...payload,
       merchant_id: merchantId,
       user_id: user._id,
-      creator_by: creator._id,
-    });
+      created_by: creator._id,
+    };
+
+    const merchant = await this.merchant.create(merchantPayload);
 
     const data = { ...merchant.toObject(), password };
 

@@ -1,4 +1,4 @@
-import { DEFAULT_COUNTRY_CODE, SUPPORTED_COUNTRY_CODES } from '@on/app/data/country';
+import { DEFAULT_COUNTRY_CODE, SUPPORTED_COUNTRY_CODES } from '@on/data/country';
 
 interface ParsedPhone {
   code: string;

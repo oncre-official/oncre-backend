@@ -20,7 +20,7 @@ interface Options {
   new?: boolean;
   upsert?: boolean;
   lean?: boolean;
-  returnDocument?: string;
+  returnDocument?: 'after' | 'before';
 }
 
 export class BaseRepository<T> {
@@ -83,7 +83,7 @@ export class BaseRepository<T> {
     const parsedQuery = normalizeMongoIds(query);
 
     let queryBuilder = this.repository.findOneAndUpdate(parsedQuery, payload, {
-      new: options.new ?? true,
+      returnDocument: options.returnDocument ?? 'after',
       upsert: options.upsert ?? false,
       lean: options.lean ?? false,
       select: options.select,
