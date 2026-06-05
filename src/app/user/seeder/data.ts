@@ -28,6 +28,13 @@ export const users = [
     password: 'Sales@123',
   },
   {
+    role: 'field-agent',
+    country_code: '234',
+    phone: '9000000007',
+    email: 'field-agent@oncre.com',
+    password: 'FieldAgent@123',
+  },
+  {
     role: 'merchant',
     country_code: '234',
     phone: '9000000005',

@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 
+import { RoleModule } from '../role/role.module';
+import { SharedModule } from '../shared/shared.module';
 import { UserModule } from '../user/user.module';
 
 import { MerchantController } from './merchant.controller';
@@ -9,7 +11,12 @@ import { Merchant, MerchantSchema } from './model/merchant.model';
 import { MerchantRepository } from './repository/merchant.repository';
 
 @Module({
-  imports: [MongooseModule.forFeature([{ name: Merchant.name, schema: MerchantSchema }]), UserModule],
+  imports: [
+    MongooseModule.forFeature([{ name: Merchant.name, schema: MerchantSchema }]),
+    UserModule,
+    RoleModule,
+    SharedModule,
+  ],
   controllers: [MerchantController],
   providers: [MerchantRepository, MerchantService, MerchantRepository],
   exports: [MerchantRepository, MerchantService, MerchantRepository],

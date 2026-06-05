@@ -5,6 +5,7 @@ import { ServiceResponse } from '@on/utils/types';
 import { LgaQueryDto, StateQueryDto } from './dto/state-local.dto';
 import { Lga } from './model/local-govt.model';
 import { State } from './model/state.model';
+import { CounterRepository } from './repository/counter.repository';
 import { LgaRepository } from './repository/local-govt.repository';
 import { StateRepository } from './repository/state.repository';
 
@@ -13,6 +14,7 @@ export class SharedService {
   constructor(
     private readonly lga: LgaRepository,
     private readonly state: StateRepository,
+    private readonly counter: CounterRepository,
   ) {}
 
   async findState(query: StateQueryDto): Promise<ServiceResponse<State[]>> {
@@ -27,5 +29,21 @@ export class SharedService {
     });
 
     return { data, message: `Lga successfully fetched` };
+  }
+
+  /**
+   * UTILITIES
+   */
+
+  async generateSequentialId(counterName: string, prefix: string, padding: number = 5): Promise<string> {
+    const result = await this.counter.findOneAndUpdate(
+      { _id: counterName },
+      { $inc: { seq: 1 } },
+      { upsert: true, returnDocument: 'after' },
+    );
+
+    const seq = result?.seq || 1;
+
+    return `${prefix}-${String(seq).padStart(padding, '0')}`;
   }
 }

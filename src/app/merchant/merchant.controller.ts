@@ -1,6 +1,8 @@
-import { Body, Controller, Get, Query, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags, ApiUnprocessableEntityResponse } from '@nestjs/swagger';
 
+import { Roles } from '@on/decorators/roles.decorator';
+import { User } from '@on/decorators/user.decorator';
 import { ErrorResponse, JsonResponse } from '@on/handlers/responses';
 import { requestFilter } from '@on/helpers/filter';
 import { QueryDto } from '@on/utils/dto/query.dto';
@@ -8,7 +10,10 @@ import { ApiResponseDTO } from '@on/utils/dto/response.dto';
 import { ResponseDTO } from '@on/utils/types';
 
 import { JwtAuthGuard } from '../auth/guard/auth.guard';
+import { RoleGuard } from '../auth/guard/role.guard';
+import { User as UserDocument } from '../user/model/user.model';
 
+import { CreateMerchantDto } from './dto/merchant.dto';
 import { MerchantService } from './merchant.service';
 import { Merchant } from './model/merchant.model';
 
@@ -35,6 +40,30 @@ export class MerchantController {
       const filter = requestFilter(query, { convertToRegex: false });
 
       const response = await this.merchantService.find(filter, skip, limit);
+
+      return JsonResponse(res, response);
+    } catch (error) {
+      return ErrorResponse(res, error, req);
+    }
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Create merchant',
+    description: 'Allows users create merchant',
+  })
+  @ApiOkResponse({ description: 'Create merchant successful ', type: ApiResponseDTO })
+  @Roles('admin', 'super-admin', 'sales', 'field-agent')
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Post('/')
+  async createMerchant(
+    @Body() payload: CreateMerchantDto,
+    @User() user: UserDocument,
+    @Res() res: Response,
+    @Req() req: Request,
+  ): Promise<ResponseDTO> {
+    try {
+      const response = await this.merchantService.create(user, payload);
 
       return JsonResponse(res, response);
     } catch (error) {

@@ -16,9 +16,13 @@ export type MerchantDocument = HydratedDocument<Merchant>;
   },
 })
 export class Merchant extends Document implements IMerchant {
-  @ApiProperty({ description: 'User ID associated with the merchant', type: String, required: false })
+  @ApiProperty({ description: 'User ID associated with the merchant', required: false })
   @Prop({ type: Types.ObjectId, ref: 'User', required: false })
   user_id?: ObjectId;
+
+  @ApiProperty({ description: 'User who created the merchant', required: false })
+  @Prop({ type: Types.ObjectId, ref: 'User', required: false })
+  created_by?: ObjectId;
 
   @ApiProperty({ description: 'Unique identifier for the merchant', example: 'MER-00001' })
   @Prop({ required: true, unique: true })
@@ -46,6 +50,13 @@ export const MerchantSchema = SchemaFactory.createForClass(Merchant);
 MerchantSchema.virtual('user', {
   ref: 'User',
   localField: 'user_id',
+  foreignField: '_id',
+  justOne: true,
+});
+
+MerchantSchema.virtual('creator', {
+  ref: 'User',
+  localField: 'created_id',
   foreignField: '_id',
   justOne: true,
 });

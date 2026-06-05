@@ -17,6 +17,10 @@ interface Options {
   select?: string[];
   projection?: { [key: string]: number };
   pipeline?: any[];
+  new?: boolean;
+  upsert?: boolean;
+  lean?: boolean;
+  returnDocument?: string;
 }
 
 export class BaseRepository<T> {
@@ -71,6 +75,21 @@ export class BaseRepository<T> {
     );
 
     if (options?.populate) queryBuilder = queryBuilder.populate(options?.populate);
+
+    return await queryBuilder.exec();
+  }
+
+  async findOneAndUpdate(query: GenericRecord, payload: GenericRecord, options: Options = {}): Promise<T | null> {
+    const parsedQuery = normalizeMongoIds(query);
+
+    let queryBuilder = this.repository.findOneAndUpdate(parsedQuery, payload, {
+      new: options.new ?? true,
+      upsert: options.upsert ?? false,
+      lean: options.lean ?? false,
+      select: options.select,
+    });
+
+    if (options.populate) queryBuilder = queryBuilder.populate(options.populate);
 
     return await queryBuilder.exec();
   }

@@ -47,7 +47,6 @@ export const roles = [
       'view-dashboard',
     ],
   },
-
   {
     name: 'admin',
     permissions: ['manage-users', 'manage-orders', 'manage-products', 'view-dashboard'],
@@ -57,12 +56,14 @@ export const roles = [
     name: 'recovery',
     permissions: ['manage-recovery', 'view-dashboard'],
   },
-
   {
     name: 'sales',
     permissions: ['manage-orders', 'view-dashboard'],
   },
-
+  {
+    name: 'field-agent',
+    permissions: ['manage-orders', 'view-dashboard'],
+  },
   {
     name: 'merchant',
     permissions: ['manage-products', 'manage-orders'],
