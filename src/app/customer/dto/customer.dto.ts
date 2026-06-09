@@ -1,29 +1,26 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsNotEmpty, IsString, IsOptional } from 'class-validator';
 
-export class CustomerDto {
-  @ApiProperty({ description: 'Unique identifier for the merchant', example: 'MER-00001' })
+export class CreateCustomerDto {
+  @ApiProperty({ description: 'Personal name of the customer', example: 'John Doe' })
   @IsString()
   @IsNotEmpty()
-  merchant_id: string;
+  customer_name: string;
 
-  @ApiProperty({ description: 'Personal name of the merchant', example: 'John Doe' })
+  @ApiPropertyOptional({ description: 'Personal name of the customer', example: 'John Doe' })
+  @IsString()
+  @IsOptional()
+  business_name: string;
+
+  @ApiProperty({ description: 'Phone number of the customer', example: '+1234567890' })
   @IsString()
   @IsNotEmpty()
-  merchant_name: string;
+  customer_phone: string;
+}
 
-  @ApiProperty({ description: 'Store name of the merchant', example: "John's Store" })
+export class CustomerDto extends CreateCustomerDto {
+  @ApiProperty({ description: 'Unique identifier for the customer', example: 'CUS-00001' })
   @IsString()
   @IsNotEmpty()
-  merchant_store_name: string;
-
-  @ApiProperty({ description: 'Phone number of the merchant', example: '+1234567890' })
-  @IsString()
-  @IsNotEmpty()
-  merchant_phone: string;
-
-  @ApiProperty({ description: 'Location of the merchant', example: '123 Main St, City, Country' })
-  @IsString()
-  @IsNotEmpty()
-  location: string;
+  customer_id: string;
 }

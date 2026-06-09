@@ -51,7 +51,7 @@ export class Payment extends Document implements IPayment {
 
   @ApiProperty({ required: false })
   @Prop({ Type: Date, required: false })
-  paid_at: Date ;
+  paid_at: Date;
 }
 
 export const PaymentSchema = SchemaFactory.createForClass(Payment);

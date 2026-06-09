@@ -24,7 +24,7 @@ export class MerchantRepository extends BaseRepository<MerchantDocument> {
     super(merchantModel);
   }
 
-  async findOrCreate(payload: ICreateMerchant): Promise<MerchantDocument> {
+  async findOrCreate(payload: ICreateMerchant): Promise<MerchantDocument | null> {
     const { merchant_name, merchant_phone, created_by, ...others } = payload;
 
     const normalizedName = merchant_name.trim();
@@ -33,7 +33,7 @@ export class MerchantRepository extends BaseRepository<MerchantDocument> {
     const userLookup = buildUserLookupQuery(merchant_phone);
     const conditions = [userLookup];
 
-    let merchant = await this.findOne({ merchant_name: merchantRegex });
+    let merchant: MerchantDocument | null = await this.merchantModel.findOne({ merchant_name: merchantRegex });
 
     const normalizedPhone = formatPhoneWithCode(merchant_phone);
     const { code, phone } = parsePhone(normalizedPhone);
@@ -59,7 +59,7 @@ export class MerchantRepository extends BaseRepository<MerchantDocument> {
           });
         }
 
-        merchant = await this.updateById(merchant._id, {
+        merchant = await this.merchantModel.findByIdAndUpdate(merchant._id, {
           user_id: user._id,
           ...others,
         });
@@ -86,7 +86,7 @@ export class MerchantRepository extends BaseRepository<MerchantDocument> {
 
     const merchantId = await this.shared.generateSequentialId('merchant_id', 'MER', 5);
 
-    merchant = await this.create({
+    merchant = await this.merchantModel.create({
       ...payload,
       merchant_id: merchantId,
       user_id: user._id,
