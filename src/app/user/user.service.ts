@@ -88,18 +88,18 @@ export class UserService {
     const otpCode = getRandomNumber();
     const expires_at = new Date(Date.now() + 10 * 60 * 1000);
 
-    await this.token.deleteMany({ userId: user._id, type });
+    await this.token.deleteMany({ user_id: user._id, type });
 
     const token = String(otpCode);
 
     await this.token.create({
-      userId: user._id,
+      user_id: user._id,
       token,
       type,
       expires_at,
     });
 
-    const message = `Your otp code is ${token} valid for 10 minutes`;
+    const message = `Your Oncre otp code is ${token} valid for 10 minutes`;
     const to = normalizePhoneNumber(user.phone);
 
     await this.termii.sendMessage(to, message);

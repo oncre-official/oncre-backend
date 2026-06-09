@@ -5,7 +5,7 @@ export enum UserStatus {
 
 export enum TokenType {
   PHONE_VERIFICATION = 'phone_verification',
-  PIN_RESET = 'pin_reset',
+  PASSWORD_RESET = 'password_reset',
 }
 
 export enum PaymentStatus {

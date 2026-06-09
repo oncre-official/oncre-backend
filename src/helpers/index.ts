@@ -60,6 +60,15 @@ export function validateAmount(amount: any): void {
   }
 }
 
+export function isEmail(value: unknown): boolean {
+  if (typeof value !== 'string') return false;
+
+  const email = value.trim();
+  const emailRegex = /^[^\s@]+@([^\s@.,]+\.)+[^\s@.,]{2,}$/;
+
+  return emailRegex.test(email);
+}
+
 export function formatNoWithoutZero(phone: string): string {
   const digits = phone.replace(/\D/g, '');
 

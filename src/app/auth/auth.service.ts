@@ -30,6 +30,7 @@ export class AuthService {
 
     const user = await this.user.findOne({ $or: conditions }, { populate: [{ path: 'role' }] });
     if (!user) throw new NotFoundException('User with this phone number or email does not exist.');
+    if (!user.password_changed) throw new BadRequestException('Please rest passowrd');
 
     const isValidPassword: boolean = await compareResource(password, user.password);
     if (!isValidPassword) throw new BadRequestException('Incorrect password provided');
@@ -53,14 +54,14 @@ export class AuthService {
     const user = await this.user.findOne({ $or: conditions });
     if (!user) throw new NotFoundException('User with this phone number or email does not exist.');
 
-    const otp = await this.userService.createVerificationOtp(user, TokenType.PIN_RESET);
+    const otp = await this.userService.createVerificationOtp(user, TokenType.PASSWORD_RESET);
 
     const data = {
-      userId: user._id,
+      user_id: user._id,
       otp,
     };
 
-    return { data, message: 'OTP sent for PIN reset.' };
+    return { data, message: 'OTP sent for Password reset.' };
   }
 
   public async resetPassword(payload: ResetPasswordDto): Promise<ServiceResponse<IUserToken>> {
@@ -72,10 +73,10 @@ export class AuthService {
     const user = await this.user.findOne({ $or: conditions });
     if (!user) throw new NotFoundException('User with this phone number or email does not exist.');
 
-    const token = await this.token.findOne({ type: TokenType.PIN_RESET, token: otp });
+    const token = await this.token.findOne({ type: TokenType.PASSWORD_RESET, token: otp });
     if (!token) throw new BadRequestException('Invalid OTP code.');
 
-    if (token.user_id.toString() !== user._id.toString()) throw new BadRequestException('Invalid user OTP.');
+    if (String(token.user_id) !== String(user._id)) throw new BadRequestException('Invalid user OTP.');
     if (token.expires_at < new Date()) throw new BadRequestException('OTP has expired. Please request a new one.');
 
     const hash = await hashResource(newPassword);

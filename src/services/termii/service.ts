@@ -91,11 +91,12 @@ export class TermiiService {
       from: this.senderId,
       sms: message,
       type: 'plain',
-      channel: 'generic',
+      channel: 'dnd',
     };
 
     try {
-      const { data } = await this.axios.post<MessageResponse>('/sms/send', payload);
+      const { data } = await this.axios.post<MessageResponse>('/api/sms/send', payload);
+      console.log(data);
 
       return data;
     } catch (error: any) {
