@@ -28,7 +28,7 @@ export class AuthService {
     const userLookup = buildUserLookupQuery(value);
     const conditions = [userLookup];
 
-    const user = await this.user.findOne({ $or: conditions });
+    const user = await this.user.findOne({ $or: conditions }, { populate: [{ path: 'role' }] });
     if (!user) throw new NotFoundException('User with this phone number or email does not exist.');
 
     const isValidPassword: boolean = await compareResource(password, user.password);

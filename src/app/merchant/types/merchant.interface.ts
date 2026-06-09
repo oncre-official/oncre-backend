@@ -11,3 +11,11 @@ export interface IMerchant extends IBaseType {
   merchant_phone: string;
   location: string;
 }
+
+export interface ICreateMerchant {
+  merchant_name: string;
+  merchant_store_name: string;
+  merchant_phone: string;
+  location: string;
+  created_by?: ObjectId;
+}
