@@ -30,7 +30,13 @@ export class AuthService {
 
     const user = await this.user.findOne({ $or: conditions }, { populate: [{ path: 'role' }] });
     if (!user) throw new NotFoundException('User with this phone number or email does not exist.');
-    if (!user.password_changed) throw new BadRequestException('Please rest passowrd');
+    if (!user.password_changed) {
+      await this.userService.createVerificationOtp(user, TokenType.PASSWORD_RESET);
+
+      throw new BadRequestException(
+        'Your account requires a password change before sign in. A password reset code has been sent',
+      );
+    }
 
     const isValidPassword: boolean = await compareResource(password, user.password);
     if (!isValidPassword) throw new BadRequestException('Incorrect password provided');
