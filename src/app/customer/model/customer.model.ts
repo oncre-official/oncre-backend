@@ -36,6 +36,10 @@ export class Customer extends Document implements ICustomer {
   @Prop({ required: true })
   customer_name: string;
 
+  @ApiProperty({ description: 'Personal address of the customer', example: '32, Ozumba nbadiwer, VI' })
+  @Prop({ required: true })
+  customer_address: string;
+
   @ApiProperty()
   @Prop({ enum: CustomerStatus, required: true, default: CustomerStatus.ACTIVE })
   status: CustomerStatus;
