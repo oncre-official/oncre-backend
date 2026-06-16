@@ -61,24 +61,12 @@ export class CallService {
         search,
         fields: [],
         query,
-        joins: [
-          {
-            from: 'cases',
-            localField: 'case',
-            foreignField: '_id',
-            as: 'case',
-          },
-        ],
+        joins: [{ from: 'cases', localField: 'case', foreignField: '_id', as: 'case' }],
       });
     } else {
       pipeline = [
         {
-          $lookup: {
-            from: 'cases',
-            localField: 'case',
-            foreignField: '_id',
-            as: 'case',
-          },
+          $lookup: { from: 'cases', localField: 'case', foreignField: '_id', as: 'case' },
         },
         { $unwind: '$case' },
       ];
