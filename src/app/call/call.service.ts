@@ -43,4 +43,53 @@ export class CallService {
 
     return { data, message: 'calls successfully fetched' };
   }
+
+  async findList(query: QueryCallDto, skip: number = 0, limit: number = 20): Promise<ServiceResponse<any>> {
+    const { search } = query;
+
+    const now = new Date();
+
+    const caseFilter = {
+      'case.status': 'ACTIVE',
+      'case.schedule_for': { $lte: now },
+    };
+
+    let pipeline: any[] = [];
+
+    if (search) {
+      pipeline = joinSearchQuery({
+        search,
+        fields: [],
+        query,
+        joins: [
+          {
+            from: 'cases',
+            localField: 'case',
+            foreignField: '_id',
+            as: 'case',
+          },
+        ],
+      });
+    } else {
+      pipeline = [
+        {
+          $lookup: {
+            from: 'cases',
+            localField: 'case',
+            foreignField: '_id',
+            as: 'case',
+          },
+        },
+        { $unwind: '$case' },
+      ];
+    }
+
+    pipeline.push({ $match: caseFilter });
+
+    const data = await this.call.aggregateAndCount(pipeline, {
+      aggregate: { skip, limit },
+    });
+
+    return { data, message: 'calls successfully fetched' };
+  }
 }

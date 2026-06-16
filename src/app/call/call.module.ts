@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 
+import { RoleModule } from '../role/role.module';
 import { UserModule } from '../user/user.module';
 
 import { CallController } from './call.controller';
@@ -17,6 +18,7 @@ import { CallRepository } from './repository/call.repository';
       { name: CallLog.name, schema: CallLogSchema },
     ]),
     UserModule,
+    RoleModule,
   ],
   controllers: [CallController],
   providers: [CallRepository, CallService, CallRepository, CallLogRepository],

@@ -4,8 +4,14 @@ import { QueryDto } from '@on/utils/dto/query.dto';
 
 export class QueryCallDto extends QueryDto {
   @ApiPropertyOptional()
-  ownerId?: string;
+  call_id?: string;
 
   @ApiPropertyOptional()
-  customerId?: string;
+  case_id?: string;
+
+  @ApiPropertyOptional()
+  merchant_id?: string;
+
+  @ApiPropertyOptional()
+  call_type?: string;
 }
