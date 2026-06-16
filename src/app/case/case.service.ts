@@ -14,11 +14,13 @@ import { CreateCaseDto } from './dto/case.dto';
 import { QueryCaseDto } from './dto/query.dto';
 import { Case } from './model/case.model';
 import { CaseRepository } from './repository/case.repository';
+import { CallService } from './services/call.service';
 import { MessageService } from './services/message.service';
 
 @Injectable()
 export class CaseService {
   constructor(
+    private readonly call: CallService,
     private readonly cases: CaseRepository,
     private readonly shared: SharedService,
     private readonly message: MessageService,
@@ -89,7 +91,12 @@ export class CaseService {
       ...payload,
     });
 
-    await Promise.all([this.message.sendActivation(data)]);
+    await Promise.all([
+      this.message.sendActivation(data),
+      this.message.schedule(data),
+      this.call.schedule(data),
+      this.message.process(data),
+    ]);
 
     return { data, message: `Merchant successfully created` };
   }
