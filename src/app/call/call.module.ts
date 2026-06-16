@@ -10,6 +10,7 @@ import { CallLog, CallLogSchema } from './model/call-log.model';
 import { Call, CallSchema } from './model/call.model';
 import { CallLogRepository } from './repository/call-log.repository';
 import { CallRepository } from './repository/call.repository';
+import { OutcomeService } from './service/outcome.service';
 
 @Module({
   imports: [
@@ -21,7 +22,7 @@ import { CallRepository } from './repository/call.repository';
     RoleModule,
   ],
   controllers: [CallController],
-  providers: [CallRepository, CallService, CallRepository, CallLogRepository],
+  providers: [CallRepository, CallService, OutcomeService, CallRepository, CallLogRepository],
   exports: [CallRepository, CallService, CallRepository, CallLogRepository],
 })
 export class CallModule {}

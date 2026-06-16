@@ -1,14 +1,22 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
+import { ObjectId } from 'mongodb';
 
+import { CallOutcomeStatus } from '@on/enum';
 import { joinSearchQuery } from '@on/helpers/search';
 import { ServiceResponse } from '@on/utils/types';
 
+import { LogCallDto } from './dto/log.dto';
 import { QueryCallDto } from './dto/query.dto';
+import { CallLog } from './model/call-log.model';
 import { CallRepository } from './repository/call.repository';
+import { OutcomeService } from './service/outcome.service';
 
 @Injectable()
 export class CallService {
-  constructor(private readonly call: CallRepository) {}
+  constructor(
+    private readonly call: CallRepository,
+    private readonly outcome: OutcomeService,
+  ) {}
 
   async find(query: QueryCallDto, skip: number = 0, limit: number = 20): Promise<ServiceResponse<any>> {
     const { search } = query;
@@ -79,5 +87,20 @@ export class CallService {
     });
 
     return { data, message: 'calls successfully fetched' };
+  }
+
+  async log(payload: LogCallDto): Promise<ServiceResponse<CallLog>> {
+    const { call_id, outcome, note } = payload;
+
+    const callId = new ObjectId(String(call_id));
+
+    const call = await this.call.findById(callId);
+    if (!call) throw new BadRequestException('Call with id not found');
+
+    if (call.status === CallOutcomeStatus.COMPLETED) throw new BadRequestException('Call with id not found');
+
+    const data = await this.outcome.handleOutcome({ call, outcome, note });
+
+    return { data, message: `Merchant successfully created` };
   }
 }
