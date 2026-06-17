@@ -1,11 +1,9 @@
-import { Case } from '@on/app/case/model/case.model';
-
 import { Call } from '../model/call.model';
 
-export function buildMissedCallMessage(caseDoc: Case, call: Call): string {
+export function buildMissedCallMessage(call: Call): string {
   const day = call.day ?? 0;
 
-  const base = `We tried reaching you regarding your outstanding debt of ₦${caseDoc.amount}.`;
+  const base = `We tried reaching you regarding your outstanding debt of ₦${call.case.amount}.`;
 
   const messages: Record<number, string> = {
     3: `${base} Kindly call us back or make payment to avoid further reminders.`,

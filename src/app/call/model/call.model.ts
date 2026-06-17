@@ -1,7 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
 import { Document, HydratedDocument } from 'mongoose';
 
+import { Case } from '@on/app/case/model/case.model';
 import { CallOutcomeStatus, CallType } from '@on/enum';
 
 import { ICall } from '../types/call.interface';
@@ -52,9 +53,22 @@ export class Call extends Document implements ICall {
   @ApiProperty({ required: false })
   @Prop({ Type: Date, required: false })
   scheduled_for: Date;
+
+  /**
+   * ATTRIBUTES
+   */
+  @ApiHideProperty()
+  case: Case;
 }
 
 export const CallSchema = SchemaFactory.createForClass(Call);
+
+CallSchema.virtual('case', {
+  ref: 'Case',
+  localField: 'case_id',
+  foreignField: 'case_id',
+  justOne: true,
+});
 
 CallSchema.set('toObject', { virtuals: true });
 CallSchema.set('toJSON', { virtuals: true });

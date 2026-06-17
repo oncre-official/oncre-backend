@@ -1,5 +1,12 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 
+import { isCaseOnHold } from '@on/app/case/helper/indexx';
+import { MessageRepository } from '@on/app/message/repository/message.repository';
+import { SharedService } from '@on/app/shared/shared.service';
+import { normalizePhone } from '@on/helpers/phone';
+import { TermiiService } from '@on/services/termii/service';
+
+import { buildMissedCallMessage } from '../helpers/missed';
 import { CallLog } from '../model/call-log.model';
 import { Call } from '../model/call.model';
 import { CallLogRepository } from '../repository/call-log.repository';
@@ -14,7 +21,10 @@ export class OutcomeService {
 
   constructor(
     private readonly call: CallRepository,
+    private readonly shared: SharedService,
+    private readonly termii: TermiiService,
     private readonly log: CallLogRepository,
+    private readonly message: MessageRepository,
   ) {}
 
   async handleOutcome(payload: IHandleOutcome): Promise<CallLog> {
@@ -43,6 +53,8 @@ export class OutcomeService {
       },
     );
 
+    this.logger.log('Outcome handled successfully');
+
     return callLog;
   }
 
@@ -55,41 +67,44 @@ export class OutcomeService {
       await this.handleNoAnswer(call);
     },
 
-    PROMISED_TO_PAY: async (caseDoc) => {
-      await holdEscalation(caseDoc.case_id, 48);
+    PROMISED_TO_PAY: async (call) => {
+      await this.holdEscalation(call, 48);
     },
 
-    PAYMENT_PLAN: async (caseDoc) => {
-      await handlePaymentPlan(caseDoc);
+    PAYMENT_PLAN: async (call) => {
+      await this.handlePaymentPlan(call);
     },
 
-    PARTIAL_PAYMENT: async (caseDoc) => {
-      await handlePartialPayment(caseDoc.case_id);
+    PARTIAL_PAYMENT: async (call) => {
+      await this.handlePartialPayment(call);
     },
 
-    FULL_PAYMENT: async (caseDoc) => {
-      await handleFullPayment(caseDoc.case_id);
+    FULL_PAYMENT: async (call) => {
+      await this.handleFullPayment(call);
     },
 
-    CALL_BACK_LATER: async (caseDoc, callDoc) => {
-      await scheduleCallback(caseDoc, callDoc);
+    CALL_BACK_LATER: async (call) => {
+      await this.scheduleCallback(call);
     },
 
-    REFUSED: async (caseDoc) => {
-      await pauseEngine(caseDoc.case_id, 'REFUSED');
+    REFUSED: async (call) => {
+      await this.pauseEngine(call, 'REFUSED');
     },
 
-    DISPUTED: async (caseDoc) => {
-      await handleDispute(caseDoc);
+    DISPUTED: async (call) => {
+      await this.handleDispute(call);
+
+      await this.pauseEngine(call, 'Case Disputed');
     },
 
-    UNREACHABLE: async (caseDoc, callDoc) => {
-      await sendUnreachableSMS(caseDoc, callDoc);
+    UNREACHABLE: async (call) => {
+      await this.sendUnreachableSMS(call);
     },
 
-    NUMBER_INVALID: async (caseDoc, callDoc) => {
-      await scheduleCallback(caseDoc, callDoc);
-      await pauseEngine(caseDoc.case_id, 'Invalid Number');
+    NUMBER_INVALID: async (call) => {
+      await this.scheduleCallback(call);
+
+      await this.pauseEngine(call, 'Invalid Number');
     },
   };
 
@@ -97,5 +112,136 @@ export class OutcomeService {
    * PRIVATE UTILITY METHOD
    */
 
-  private async handleNoAnswer(call: Call) {}
+  private async handleNoAnswer(call: Call) {
+    if (isCaseOnHold(call.case)) return;
+
+    const { debtor_phone, case_id, merchant_id } = call.case;
+
+    const phone = normalizePhone(debtor_phone);
+    const messageBody = buildMissedCallMessage(call);
+
+    const result = await this.termii.sendSMS(phone, messageBody);
+
+    await this.message.create({
+      case_id,
+      merchant_id,
+      debtor_phone,
+      message_type: 'missed_call',
+      message_index: call.day || 0,
+      action_type: 'sms',
+      message_body: messageBody,
+      scheduled_for: new Date(),
+      delivery_status: result.success ? 'sent' : 'failed',
+      message_tier: null,
+      sent_at: new Date(),
+      termii_message_id: result?.message_id ?? null,
+      error_details: result.success ? null : (result.error ?? 'Failed to send'),
+      cancelled_reason: null,
+      credit_id: '',
+      customer_key: 'debtor',
+      customer_phone: phone,
+    });
+  }
+
+  private async holdEscalation(call: Call, hours: number) {
+    const holdUntil = new Date(Date.now() + hours * 60 * 60 * 1000);
+
+    if (!call.case) await call.populate('case');
+    if (!call.case) throw new NotFoundException(`Case not found for call ${call.call_id}`);
+
+    await call.case.updateOne({ hold: true, hold_until: holdUntil });
+  }
+
+  private async handlePaymentPlan(call: Call) {
+    console.log(call);
+
+    await this.call.findById(call?._id);
+  }
+
+  private async handlePartialPayment(call: Call) {
+    if (!call.case) await call.populate('case');
+    if (!call.case) throw new NotFoundException(`Case not found for call ${call.call_id}`);
+
+    await call.case.updateOne({ status: 'CLOSURE_REVIEW' });
+  }
+
+  private async handleFullPayment(call: Call) {
+    const { case_id } = call;
+
+    if (!call.case) await call.populate('case');
+    if (!call.case) throw new NotFoundException(`Case not found for call ${call.call_id}`);
+
+    await call.case.updateOne({
+      status: 'COMPLETED',
+      recovery_mode: 'ESCALATION',
+      is_paused: true,
+      completed_at: new Date(),
+    });
+
+    await this.message.updateMany(
+      {
+        case_id,
+        delivery_status: 'scheduled',
+      },
+      {
+        $set: {
+          delivery_status: 'cancelled',
+          cancelled_reason: 'Payment completed',
+          updated_at: new Date(),
+        },
+      },
+    );
+  }
+
+  private async scheduleCallback(call: Call) {
+    const { merchant_id, case_id, debtor_phone } = call.case;
+
+    const now = new Date();
+
+    const nextCallDate = new Date();
+    nextCallDate.setDate(now.getDate() + 1);
+
+    const callId = await this.shared.generateSequentialId('call_id', 'CL', 5);
+
+    await this.call.create({
+      case_id,
+      call_id: callId,
+      merchant_id,
+      debtor_phone,
+      day: (call.day || 0) + 1,
+      call_type: 'case',
+      status: 'scheduled',
+      scheduled_for: nextCallDate,
+    });
+  }
+
+  private async pauseEngine(call: Call, reason: string) {
+    if (!call.case) await call.populate('case');
+    if (!call.case) throw new NotFoundException(`Case not found for call ${call.call_id}`);
+
+    await call.case.updateOne({
+      is_paused: true,
+      pause_reason: reason,
+    });
+  }
+
+  private async handleDispute(call: Call) {
+    if (!call.case) await call.populate('case');
+    if (!call.case) throw new NotFoundException(`Case not found for call ${call.call_id}`);
+
+    await call.case.updateOne({
+      status: 'DISPUTED',
+      is_paused: true,
+    });
+  }
+
+  private async sendUnreachableSMS(call: Call) {
+    const { debtor_phone } = call.case;
+
+    const phone = normalizePhone(debtor_phone);
+
+    const message = 'We were unable to reach you. We will try again shortly.';
+
+    await this.termii.sendSMS(phone, message);
+  }
 }

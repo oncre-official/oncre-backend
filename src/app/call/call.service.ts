@@ -94,7 +94,7 @@ export class CallService {
 
     const callId = new ObjectId(String(call_id));
 
-    const call = await this.call.findById(callId);
+    const call = await this.call.findById(callId, { populate: [{ path: 'case', populate: { path: 'merchant' } }] });
     if (!call) throw new BadRequestException('Call with id not found');
 
     if (call.status === CallOutcomeStatus.COMPLETED) throw new BadRequestException('Call with id not found');

@@ -1,6 +1,8 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
 import { Document, HydratedDocument } from 'mongoose';
+
+import { Merchant } from '@on/app/merchant/model/merchant.model';
 
 import { ICase, RecoveryMode } from '../types/case.interface';
 
@@ -106,9 +108,22 @@ export class Case extends Document implements ICase {
   @ApiProperty({ required: false })
   @Prop({ Type: Number, required: false })
   outstanding_balance?: number;
+
+  /**
+   * ATTRIBUTES
+   */
+  @ApiHideProperty()
+  merchant: Merchant;
 }
 
 export const CaseSchema = SchemaFactory.createForClass(Case);
+
+CaseSchema.virtual('merchant', {
+  ref: 'Merchant',
+  localField: 'merchant_id',
+  foreignField: 'merchant_id',
+  justOne: true,
+});
 
 CaseSchema.set('toObject', { virtuals: true });
 CaseSchema.set('toJSON', { virtuals: true });
