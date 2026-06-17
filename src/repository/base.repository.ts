@@ -71,7 +71,7 @@ export class BaseRepository<T> {
     let queryBuilder: any = this.repository.findOneAndUpdate(
       parsedQuery,
       { $setOnInsert: payload },
-      { new: true, upsert: true },
+      { returnDocument: 'after', upsert: true },
     );
 
     if (options?.populate) queryBuilder = queryBuilder.populate(options?.populate);
@@ -140,7 +140,7 @@ export class BaseRepository<T> {
     const parsedQuery = normalizeMongoIds(query);
     const parsedUpdate = normalizeMongoIds(update);
 
-    return await this.repository.findOneAndUpdate(parsedQuery, parsedUpdate, { new: true }).exec();
+    return await this.repository.findOneAndUpdate(parsedQuery, parsedUpdate, { returnDocument: 'after' }).exec();
   }
 
   async updateMany(query: GenericRecord, update: GenericRecord): Promise<UpdateResult> {
@@ -162,7 +162,9 @@ export class BaseRepository<T> {
 
     const parsedUpdate = normalizeMongoIds(update);
 
-    return await this.repository.findByIdAndUpdate(objectId, parsedUpdate, { new: true, ...options }).exec();
+    return await this.repository
+      .findByIdAndUpdate(objectId, parsedUpdate, { returnDocument: 'after', ...options })
+      .exec();
   }
 
   async deleteOne(query: GenericRecord): Promise<void> {

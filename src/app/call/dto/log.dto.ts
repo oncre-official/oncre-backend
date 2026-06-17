@@ -9,7 +9,7 @@ export class LogCallDto {
   @IsNotEmpty()
   call_id: string;
 
-  @ApiProperty({ example: 'The outcome of the call', enum: CALL_OUTCOMES })
+  @ApiProperty({ enum: CALL_OUTCOMES })
   @IsEnum(CALL_OUTCOMES)
   @IsNotEmpty()
   outcome: string;
