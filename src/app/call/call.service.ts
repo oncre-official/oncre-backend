@@ -59,7 +59,7 @@ export class CallService {
 
     const caseFilter = {
       'case.status': 'ACTIVE',
-      'case.schedule_for': { $lte: now },
+      scheduled_for: { $lte: now },
     };
 
     let pipeline: any[] = [];
@@ -69,13 +69,11 @@ export class CallService {
         search,
         fields: [],
         query,
-        joins: [{ from: 'cases', localField: 'case', foreignField: '_id', as: 'case' }],
+        joins: [{ from: 'cases', localField: 'case_id', foreignField: 'case_id', as: 'case' }],
       });
     } else {
       pipeline = [
-        {
-          $lookup: { from: 'cases', localField: 'case', foreignField: '_id', as: 'case' },
-        },
+        { $lookup: { from: 'cases', localField: 'case_id', foreignField: 'case_id', as: 'case' } },
         { $unwind: '$case' },
       ];
     }
