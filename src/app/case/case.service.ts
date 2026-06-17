@@ -88,6 +88,8 @@ export class CaseService {
       escalation_level: 1,
       current_day: 0,
       status: 'ACTIVE',
+      is_paused: false,
+      activated_at: new Date(),
       ...payload,
     });
 

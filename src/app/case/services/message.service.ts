@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 import { MerchantRepository } from '@on/app/merchant/repository/merchant.repository';
 import { MessageRepository } from '@on/app/message/repository/message.repository';
@@ -14,6 +14,8 @@ import { CaseRepository } from '../repository/case.repository';
 
 @Injectable()
 export class MessageService {
+  private readonly logger = new Logger(MessageService.name);
+
   constructor(
     private readonly cases: CaseRepository,
     private readonly termii: TermiiService,
@@ -26,9 +28,9 @@ export class MessageService {
 
     const merchant = await this.merchant.findById(merchant_id);
 
-    console.log(`[Case Activation] Starting for case ${case_id}`);
-    console.log(`[Case Activation] Debtor phone: ${debtor_phone}`);
-    console.log(`[Case Activation] Merchant phone: ${merchant?.merchant_phone}`);
+    this.logger.log(`[Case Activation] Starting for case ${case_id}`);
+    this.logger.log(`[Case Activation] Debtor phone: ${debtor_phone}`);
+    this.logger.log(`[Case Activation] Merchant phone: ${merchant?.merchant_phone}`);
 
     for (let i = 0; i < CASE_ACTIVATION_MESSAGES.length; i++) {
       const msg = CASE_ACTIVATION_MESSAGES[i];
@@ -38,18 +40,18 @@ export class MessageService {
 
       if (msg.type === 'merchant') {
         phone = merchant?.merchant_phone ?? null;
-        if (!phone) console.log(`[Case Activation] No phone for merchant ${merchant_id} — confirmation skipped`);
+        if (!phone) this.logger.log(`[Case Activation] No phone for merchant ${merchant_id} — confirmation skipped`);
       }
 
       if (msg.type === 'debtor') {
         phone = debtor_phone;
-        console.log(`[Case Activation] Debtor message - phone: ${phone}`);
+        this.logger.log(`[Case Activation] Debtor message - phone: ${phone}`);
       }
 
-      console.log(`[Case Activation] Message ${i + 1} (${msg.type}) - phone: ${phone}`);
+      this.logger.log(`[Case Activation] Message ${i + 1} (${msg.type}) - phone: ${phone}`);
 
       if (!phone) {
-        console.log(`[Case Activation] Skipping message ${i + 1} - no phone`);
+        this.logger.log(`[Case Activation] Skipping message ${i + 1} - no phone`);
         continue;
       }
 
@@ -59,12 +61,12 @@ export class MessageService {
         message_index: i + 1,
       });
       if (alreadySent) {
-        console.log(`[Case Activation] Message ${i + 1} already recorded for case ${case_id} — skipping`);
+        this.logger.log(`[Case Activation] Message ${i + 1} already recorded for case ${case_id} — skipping`);
         continue;
       }
 
       phone = normalizePhone(phone);
-      console.log(`[Case Activation] Normalized phone: ${phone}`);
+      this.logger.log(`[Case Activation] Normalized phone: ${phone}`);
 
       const smsOptions = {
         senderId: 'N-Alert',
@@ -72,7 +74,7 @@ export class MessageService {
       };
 
       const result = await this.termii.sendSMS(phone, messageBody, smsOptions);
-      console.log(
+      this.logger.log(
         `[Case Activation] SMS result for ${msg.type}: ${result.success ? 'sent' : 'failed'} - ${result.error || 'N/A'}`,
       );
 
@@ -241,7 +243,7 @@ export class MessageService {
     );
 
     if (result.modifiedCount > 0) {
-      console.log(`[Case Scheduler] Cancelled ${result.modifiedCount} messages for ${case_id}: ${reason}`);
+      this.logger.log(`[Case Scheduler] Cancelled ${result.modifiedCount} messages for ${case_id}: ${reason}`);
     }
 
     return result.modifiedCount;

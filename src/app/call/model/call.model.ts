@@ -10,7 +10,7 @@ import { ICall } from '../types/call.interface';
 export type CallDocument = HydratedDocument<Call>;
 
 @Schema({
-  collection: 'credits',
+  collection: 'calls',
   versionKey: false,
   timestamps: {
     createdAt: 'created_at',
@@ -22,12 +22,12 @@ export class Call extends Document implements ICall {
   @Prop({ required: true, unique: true })
   call_id: string;
 
-  @ApiProperty({ description: 'Auto-generated: CA-00001' })
-  @Prop({ required: true, unique: true })
+  @ApiProperty({ description: 'Auto-generated: CR-00001' })
+  @Prop({ required: false })
   credit_id?: string;
 
   @ApiProperty({ description: 'Auto-generated: CA-00001' })
-  @Prop({ required: true, unique: true })
+  @Prop({ required: false })
   case_id: string;
 
   @ApiProperty({ description: 'Merchant ID' })

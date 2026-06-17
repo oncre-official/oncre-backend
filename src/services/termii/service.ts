@@ -62,8 +62,11 @@ export class TermiiService {
 
       const { data } = await this.axios.post('/api/sms/send', payload);
 
+      this.logger.log(`This is the data from termii`, data);
+
       if (data?.code === 'ok') {
         const res = data as TermiiSendResponse;
+
         this.logger.log(`[Termii] Sent successfully → ${to} | ID: ${res.message_id}`);
 
         return {
