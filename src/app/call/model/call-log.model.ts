@@ -7,7 +7,7 @@ import { ICallLog } from '../types/call.interface';
 export type CallLogDocument = HydratedDocument<CallLog>;
 
 @Schema({
-  collection: 'credits',
+  collection: 'call_logs',
   versionKey: false,
   timestamps: {
     createdAt: 'created_at',

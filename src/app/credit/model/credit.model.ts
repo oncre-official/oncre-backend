@@ -18,7 +18,7 @@ export type CreditDocument = HydratedDocument<Credit>;
 })
 export class Credit extends Document implements ICredit {
   @ApiProperty({ description: 'Unique identifier for the credit', example: 'CRD-00001' })
-  @Prop({ required: true, unique: true })
+  @Prop({ required: false })
   credit_id: string;
 
   @ApiProperty({ description: 'Merchant ID associated with the credit', example: 'MER-00001' })

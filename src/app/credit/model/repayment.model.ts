@@ -9,7 +9,7 @@ import { IRepayment } from '../types/repayment.interface';
 export type RepaymentDocument = HydratedDocument<Repayment>;
 
 @Schema({
-  collection: 'credits',
+  collection: 'repayments',
   versionKey: false,
   timestamps: {
     createdAt: 'created_at',

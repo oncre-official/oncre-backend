@@ -95,7 +95,7 @@ export class CallService {
     const call = await this.call.findById(callId, { populate: [{ path: 'case', populate: { path: 'merchant' } }] });
     if (!call) throw new BadRequestException('Call with id not found');
 
-    if (call.status === CallOutcomeStatus.COMPLETED) throw new BadRequestException('Call with id not found');
+    if (call.status === CallOutcomeStatus.COMPLETED) throw new BadRequestException('Call has already been logged');
 
     const data = await this.outcome.handleOutcome({ call, outcome, note });
 
