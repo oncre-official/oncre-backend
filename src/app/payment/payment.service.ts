@@ -1,5 +1,9 @@
+import crypto from 'crypto';
+
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 
+import { config } from '@on/config';
+import { PaymentStatus } from '@on/enum';
 import { joinSearchQuery } from '@on/helpers/search';
 import { PaystackService } from '@on/services/paystack/service';
 import { IInitializePayment } from '@on/services/paystack/type';
@@ -10,18 +14,22 @@ import { Case } from '../case/model/case.model';
 import { CaseRepository } from '../case/repository/case.repository';
 import { CallService } from '../case/services/call.service';
 import { MessageService } from '../case/services/message.service';
-import { RecoveryMode } from '../case/types/case.interface';
+import { CaseStatus, RecoveryMode } from '../case/types/case.interface';
 import { MessageRepository } from '../message/repository/message.repository';
 import { SharedService } from '../shared/shared.service';
 
 import { CreatePlanDto } from './dto/plan.dto';
 import { QueryPaymentDto } from './dto/query.dto';
 import { convertToWeeks } from './helpers';
+import { PaymentInstallment } from './model/payment-installment.model';
 import { PaymentPlan } from './model/payment-plan.model';
+import { Payment } from './model/payment.model';
 import { PaymentInstallmentRepository } from './repository/payment-installment.repository';
 import { PaymentPlanRepository } from './repository/payment-plan.repository';
 import { PaymentRepository } from './repository/payment.repository';
-import { PaymentPlanStatus } from './types/payment-plan.interface';
+import { InstallmentPaymentStatus, PaymentPlanStatus } from './types/payment-plan.interface';
+
+import type { Request } from 'express';
 
 @Injectable()
 export class PaymentService {
@@ -124,6 +132,30 @@ export class PaymentService {
     return { data: plan, message: `Payment plan created successfully` };
   }
 
+  async handleWebhook(req: Request) {
+    const signature = req.headers['x-paystack-signature'] as string;
+
+    const body = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+
+    const hash = crypto.createHmac('sha512', config.paystack.secretKey).update(body).digest('hex');
+    if (hash !== signature) throw new BadRequestException('Invalid signature');
+
+    const event = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    if (event.event !== 'charge.success') return;
+
+    const { reference, amount } = event.data;
+
+    const amountPaid = amount / 100;
+
+    const installment = await this.installment.findOne({ reference });
+    if (installment) return this.processInstallment(installment, amountPaid);
+
+    const payment = await this.payment.findOne({ reference });
+    if (payment) return this.processDirect(payment, amountPaid);
+
+    return;
+  }
+
   /**
    * UTILITY METHODS
    */
@@ -190,5 +222,108 @@ export class PaymentService {
     }
 
     return scheduled;
+  }
+
+  private async processInstallment(installment: PaymentInstallment, amountPaid: number) {
+    const { installment_id, plan_id, reference, case_id } = installment;
+
+    if (installment.status === InstallmentPaymentStatus.PAID) throw new BadRequestException('Already processed');
+
+    const theCase = await this.cases.findOne({ case_id });
+
+    const totalPaid = installment.amount_paid + amountPaid;
+    const status = totalPaid >= installment.amount ? InstallmentPaymentStatus.PAID : InstallmentPaymentStatus.PENDING;
+
+    await this.installment.updateOne(
+      { installment_id },
+      {
+        amount_paid: totalPaid,
+        status,
+        paid_at: status === InstallmentPaymentStatus.PAID ? new Date() : null,
+      },
+    );
+
+    await this.plan.updateOne({ plan_id }, { $inc: { total_paid: amountPaid } });
+
+    await this.updatePaymentRecord(reference, totalPaid, status);
+
+    await this.completePlan(plan_id, theCase);
+
+    return;
+  }
+
+  private async processDirect(payment: Payment, amountPaid: number) {
+    const { reference, case_id } = payment;
+
+    const totalPaid = payment.amount_paid + amountPaid;
+    const status = totalPaid >= payment.amount ? PaymentStatus.PAID : PaymentStatus.PART_PAID;
+
+    const theCase = await this.cases.findOne({ case_id });
+
+    await this.payment.updateOne(
+      { reference },
+      {
+        amount_paid: totalPaid,
+        status,
+        paid_at: new Date(),
+      },
+    );
+
+    if (status === PaymentStatus.PAID) {
+      await this.cases.updateOne(
+        { case_id },
+        {
+          $set: {
+            status: CaseStatus.COMPLETED,
+            is_paused: true,
+            completed_at: new Date(),
+          },
+        },
+      );
+
+      await Promise.all([
+        this.caseMessage.cancel(theCase, 'Payment completed'),
+        this.caseCall.cancel(theCase, 'Payment completed'),
+      ]);
+    }
+
+    return;
+  }
+
+  private async updatePaymentRecord(reference: string, amountPaid: number, status: string): Promise<void> {
+    const payment = await this.payment.findOne({ reference });
+    if (!payment) return;
+
+    await this.payment.updateOne({ reference }, { amount_paid: amountPaid, status, paid_at: new Date() });
+  }
+
+  private async completePlan(planId: string, theCase: Case): Promise<void> {
+    const { case_id } = theCase;
+
+    const remaining = await this.installment.count({
+      plan_id: planId,
+      status: { $ne: InstallmentPaymentStatus.PAID },
+    });
+
+    if (remaining > 0) return;
+
+    await this.plan.updateOne({ plan_id: planId }, { status: PaymentPlanStatus.COMPLETED });
+
+    await this.cases.updateOne(
+      { case_id },
+      {
+        $set: {
+          status: CaseStatus.COMPLETED,
+          recovery_mode: RecoveryMode.COMPLETED,
+          is_paused: true,
+          completed_at: new Date(),
+        },
+      },
+    );
+
+    await Promise.all([
+      this.caseMessage.cancel(theCase, 'Payment completed'),
+      this.caseCall.cancel(theCase, 'Payment completed'),
+    ]);
   }
 }

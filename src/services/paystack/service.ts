@@ -1,6 +1,8 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import axios, { AxiosInstance } from 'axios';
 
+import { config } from '@on/config';
+
 import { IInitializePayment } from './type';
 
 @Injectable()
@@ -9,8 +11,8 @@ export class PaystackService {
 
   private readonly axios: AxiosInstance;
   private readonly baseUrl = 'https://api.paystack.co';
-  private readonly secretKey = process.env.PAYSTACK_SECRET_KEY!;
-  private readonly appUrl = process.env.APP_URL;
+  private readonly secretKey = config.paystack.secretKey;
+  private readonly appUrl = config.app.baseUrl;
 
   constructor() {
     if (!this.secretKey) {

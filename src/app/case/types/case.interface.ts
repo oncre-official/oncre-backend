@@ -6,6 +6,9 @@ export enum RecoveryMode {
   COMPLETED = 'COMPLETED',
 }
 
+export enum CaseStatus {
+  COMPLETED = 'COMPLETED',
+}
 export interface ICase extends IBaseType {
   case_id: string;
   merchant_id: string;

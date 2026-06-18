@@ -35,6 +35,9 @@ export const config = {
     secretKey: process.env.TERMII_SECRET_KEY,
     senderId: process.env.TERMII_SENDER_ID || 'N-Alert',
   },
+  paystack: {
+    secretKey: process.env.PAYSTACK_SECRET_KEY || '',
+  },
   slack: {
     webhookUrl: slackWebhook,
     chatHookUrl: process.env.MSG_SLACK_API_HOOK_URL,

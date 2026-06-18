@@ -109,6 +109,12 @@ export class BaseRepository<T> {
     return await this.repository.distinct(field, query).exec();
   }
 
+  async count(query?: GenericRecord): Promise<number> {
+    const parsedQuery = normalizeMongoIds(query || {});
+
+    return await this.repository.countDocuments(parsedQuery).exec();
+  }
+
   async aggregateAndCount(pipeline: any[] = [], options?: Options): Promise<{ row: T[]; count: number }> {
     const skip = Number(options?.aggregate?.skip || 0);
     const limit = Number(options?.aggregate?.limit || 0);

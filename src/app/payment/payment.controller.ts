@@ -1,5 +1,12 @@
-import { Body, Controller, Get, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags, ApiUnprocessableEntityResponse } from '@nestjs/swagger';
+import { Body, Controller, Get, HttpCode, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiExcludeEndpoint,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiUnprocessableEntityResponse,
+} from '@nestjs/swagger';
 
 import { Roles } from '@on/decorators/roles.decorator';
 import { ErrorResponse, JsonResponse } from '@on/handlers/responses';
@@ -59,6 +66,19 @@ export class PaymentController {
       const response = await this.paymentService.createPlan(payload);
 
       return JsonResponse(res, response);
+    } catch (error) {
+      return ErrorResponse(res, error, req);
+    }
+  }
+
+  @ApiExcludeEndpoint()
+  @Post('webhook')
+  @HttpCode(200)
+  async handleWebhook(@Req() req: Request, @Res() res: Response) {
+    try {
+      await this.paymentService.handleWebhook(req);
+
+      return res.status(200).send('success');
     } catch (error) {
       return ErrorResponse(res, error, req);
     }
