@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 import { CallRepository } from '@on/app/call/repository/call.repository';
 import { SharedService } from '@on/app/shared/shared.service';
@@ -10,6 +10,8 @@ import { Case } from '../model/case.model';
 
 @Injectable()
 export class CallService {
+  private readonly logger = new Logger(CallService.name);
+
   constructor(
     private readonly call: CallRepository,
     private readonly shared: SharedService,
@@ -46,5 +48,17 @@ export class CallService {
     }
 
     return scheduled;
+  }
+
+  async cancel(newCase: Case, reason: string) {
+    const { case_id } = newCase;
+
+    const result = await this.call.updateMany({ case_id, status: 'scheduled' }, { $set: { status: 'cancelled' } });
+
+    if (result.modifiedCount > 0) {
+      this.logger.log(`[Case Scheduler] Cancelled ${result.modifiedCount} messages for ${case_id}: ${reason}`);
+    }
+
+    return result.modifiedCount;
   }
 }

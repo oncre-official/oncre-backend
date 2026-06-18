@@ -88,6 +88,10 @@ export class Message extends Document implements IMessage {
   @ApiProperty()
   @Prop({ required: false, Type: String })
   cancelled_reason: string;
+
+  @ApiProperty()
+  @Prop({ required: false, Type: Boolean })
+  payment_link_generated: boolean;
 }
 
 export const MessageSchema = SchemaFactory.createForClass(Message);

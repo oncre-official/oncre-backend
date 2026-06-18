@@ -1,6 +1,12 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 
+import { PaystackService } from '@on/services/paystack/service';
+
+import { CaseModule } from '../case/case.module';
+import { MessageModule } from '../message/message.module';
+import { RoleModule } from '../role/role.module';
+import { SharedModule } from '../shared/shared.module';
 import { UserModule } from '../user/user.module';
 
 import { PaymentInstallment, PaymentInstallmentSchema } from './model/payment-installment.model';
@@ -20,9 +26,14 @@ import { PaymentRepository } from './repository/payment.repository';
       { name: PaymentInstallment.name, schema: PaymentInstallmentSchema },
     ]),
     UserModule,
+    RoleModule,
+    CaseModule,
+    SharedModule,
+    MessageModule,
   ],
   controllers: [PaymentController],
   providers: [
+    PaystackService,
     PaymentRepository,
     PaymentService,
     PaymentRepository,

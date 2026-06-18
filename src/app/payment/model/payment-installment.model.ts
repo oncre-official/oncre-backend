@@ -2,7 +2,11 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { ApiProperty } from '@nestjs/swagger';
 import { Document, HydratedDocument } from 'mongoose';
 
-import { InstallmentPaymentStatus, IPaymentInstallment } from '../types/payment-plan.interface';
+import {
+  InstallmentPaymentStatus,
+  IPaymentInstallment,
+  PaymentGenerationStatus,
+} from '../types/payment-plan.interface';
 
 export type PaymentInstallmentDocument = HydratedDocument<PaymentInstallment>;
 
@@ -15,16 +19,16 @@ export type PaymentInstallmentDocument = HydratedDocument<PaymentInstallment>;
   },
 })
 export class PaymentInstallment extends Document implements IPaymentInstallment {
-  @ApiProperty()
+  @ApiProperty({ description: 'Auto-generated: PY-00001' })
   @Prop({ type: String })
   installment_id: string;
 
   @ApiProperty()
-  @Prop({ type: String })
+  @Prop({ type: String, required: true })
   plan_id: string;
 
-  @ApiProperty({ description: 'Auto-generated: CA-00001' })
-  @Prop({ required: true, unique: true })
+  @ApiProperty()
+  @Prop({ required: true })
   case_id: string;
 
   @ApiProperty({ required: false })
@@ -36,7 +40,7 @@ export class PaymentInstallment extends Document implements IPaymentInstallment 
   due_date: Date;
 
   @ApiProperty({ required: false })
-  @Prop({ enum: InstallmentPaymentStatus, required: false })
+  @Prop({ enum: InstallmentPaymentStatus, required: false, default: InstallmentPaymentStatus.PENDING })
   status: InstallmentPaymentStatus;
 
   @ApiProperty({ required: false })
@@ -48,12 +52,16 @@ export class PaymentInstallment extends Document implements IPaymentInstallment 
   reference: string;
 
   @ApiProperty({ required: false })
+  @Prop({ enum: PaymentGenerationStatus, required: false, default: PaymentGenerationStatus.NOT_GENERATED })
+  generation_status: PaymentGenerationStatus;
+
+  @ApiProperty({ required: false })
   @Prop({ required: false })
   amount_paid: number;
 
   @ApiProperty({ required: false })
   @Prop({ Type: Date, required: false })
-  paid_at: Date ;
+  paid_at: Date;
 }
 
 export const PaymentInstallmentSchema = SchemaFactory.createForClass(PaymentInstallment);

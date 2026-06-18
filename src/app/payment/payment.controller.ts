@@ -1,13 +1,16 @@
-import { Body, Controller, Get, Query, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags, ApiUnprocessableEntityResponse } from '@nestjs/swagger';
 
+import { Roles } from '@on/decorators/roles.decorator';
 import { ErrorResponse, JsonResponse } from '@on/handlers/responses';
 import { requestFilter } from '@on/helpers/filter';
 import { ApiResponseDTO } from '@on/utils/dto/response.dto';
 import { ResponseDTO } from '@on/utils/types';
 
 import { JwtAuthGuard } from '../auth/guard/auth.guard';
+import { RoleGuard } from '../auth/guard/role.guard';
 
+import { CreatePlanDto } from './dto/plan.dto';
 import { QueryPaymentDto } from './dto/query.dto';
 import { Payment } from './model/payment.model';
 import { PaymentService } from './payment.service';
@@ -35,6 +38,25 @@ export class PaymentController {
       const filter = requestFilter(query, { convertToRegex: false });
 
       const response = await this.paymentService.find(filter, skip, limit);
+
+      return JsonResponse(res, response);
+    } catch (error) {
+      return ErrorResponse(res, error, req);
+    }
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Create payment plan',
+    description: 'Allows users create payment plan',
+  })
+  @ApiOkResponse({ description: 'Create plan successful ', type: ApiResponseDTO })
+  @Roles('admin', 'super-admin', 'recovery')
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Post('/')
+  async createCase(@Body() payload: CreatePlanDto, @Res() res: Response, @Req() req: Request): Promise<ResponseDTO> {
+    try {
+      const response = await this.paymentService.createPlan(payload);
 
       return JsonResponse(res, response);
     } catch (error) {

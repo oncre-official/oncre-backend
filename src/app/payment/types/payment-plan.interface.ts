@@ -6,6 +6,11 @@ export enum InstallmentPaymentStatus {
   OVERDUE = 'overdue',
 }
 
+export enum PaymentGenerationStatus {
+  NOT_GENERATED = 'not_generated',
+  GENERATED = 'generated',
+}
+
 export enum PaymentPlanStatus {
   ACTIVE = 'active',
   COMPLETED = 'completed',
@@ -33,8 +38,9 @@ export interface IPaymentInstallment extends IBaseType {
   amount: number;
   due_date: Date;
   status: InstallmentPaymentStatus;
+  generation_status: PaymentGenerationStatus;
   payment_url: string;
   reference: string;
   amount_paid: number;
-  paid_at: Date ;
+  paid_at: Date;
 }

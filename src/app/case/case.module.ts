@@ -31,6 +31,6 @@ import { MessageService } from './services/message.service';
   ],
   controllers: [CaseController],
   providers: [CaseRepository, CaseService, CallService, CaseRepository, MessageService, TermiiService],
-  exports: [CaseRepository, CaseService, CaseRepository],
+  exports: [CaseRepository, CaseService, CallService, MessageService, CaseRepository],
 })
 export class CaseModule {}
