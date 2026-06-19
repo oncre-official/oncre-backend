@@ -72,7 +72,7 @@ export class PaymentController {
   }
 
   @ApiExcludeEndpoint()
-  @Post('webhook')
+  @Post('callback')
   @HttpCode(200)
   async handleWebhook(@Req() req: Request, @Res() res: Response) {
     try {
