@@ -13,4 +13,4 @@ import { ScheduledMessageSerice } from './services/scheduled-message.service';
   imports: [CaseModule, MessageModule, PaymentModule],
   providers: [PaymentPlanSerice, TermiiService, ScheduledMessageSerice],
 })
-export class CronsModule {}
+export class CronModule {}

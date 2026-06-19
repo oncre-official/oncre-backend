@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 
 import { config } from '@on/config';
 import { PaymentStatus } from '@on/enum';
@@ -33,6 +33,8 @@ import type { Request } from 'express';
 
 @Injectable()
 export class PaymentService {
+  private readonly logger = new Logger(PaymentService.name);
+
   constructor(
     private readonly cases: CaseRepository,
     private readonly shared: SharedService,
@@ -133,6 +135,8 @@ export class PaymentService {
   }
 
   async handleWebhook(req: Request) {
+    this.logger.log(`Webhook came in, processing payment......`);
+
     const signature = req.headers['x-paystack-signature'] as string;
 
     const body = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
@@ -152,6 +156,8 @@ export class PaymentService {
 
     const payment = await this.payment.findOne({ reference });
     if (payment) return this.processDirect(payment, amountPaid);
+
+    this.logger.log(`Webhook processing completed......`);
 
     return;
   }

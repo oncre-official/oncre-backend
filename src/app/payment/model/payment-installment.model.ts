@@ -11,7 +11,7 @@ import {
 export type PaymentInstallmentDocument = HydratedDocument<PaymentInstallment>;
 
 @Schema({
-  collection: 'payment_plans',
+  collection: 'payment_installments',
   versionKey: false,
   timestamps: {
     createdAt: 'created_at',

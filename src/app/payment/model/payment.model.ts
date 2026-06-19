@@ -22,7 +22,7 @@ export class Payment extends Document implements IPayment {
   payment_id: string;
 
   @ApiProperty({ description: 'Auto-generated: CA-00001' })
-  @Prop({ required: true, unique: true })
+  @Prop({ required: true })
   case_id: string;
 
   @ApiProperty({ required: false })

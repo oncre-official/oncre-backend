@@ -18,7 +18,7 @@ export type RepaymentDocument = HydratedDocument<Repayment>;
 })
 export class Repayment extends Document implements IRepayment {
   @ApiProperty({ description: 'Unique identifier for the credit', example: 'CRD-00001' })
-  @Prop({ required: true, unique: true })
+  @Prop({ required: true })
   credit_id: string;
 
   @ApiProperty({ description: 'Merchant ID associated with the credit', example: 'MER-00001' })

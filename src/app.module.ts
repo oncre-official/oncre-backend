@@ -7,6 +7,7 @@ import { AdminModule } from './app/admin/admin.module';
 import { AuthModule } from './app/auth/auth.module';
 import { CaseModule } from './app/case/case.module';
 import { CreditModule } from './app/credit/credit.module';
+import { CronModule } from './app/cron/cron.module';
 import { CustomerModule } from './app/customer/customer.module';
 import { MerchantModule } from './app/merchant/merchant.module';
 import { MessageModule } from './app/message/message.module';
@@ -27,6 +28,7 @@ import { HttpExceptionFilter } from './handlers/exceptions/http-exception.filter
     SharedModule,
     CreditModule,
     CaseModule,
+    CronModule,
     CustomerModule,
     MerchantModule,
     MessageModule,

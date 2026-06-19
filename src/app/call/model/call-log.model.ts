@@ -20,7 +20,7 @@ export class CallLog extends Document implements ICallLog {
   call_id: string;
 
   @ApiProperty({ description: 'Auto-generated: CA-00001' })
-  @Prop({ required: true, unique: true })
+  @Prop({ required: true })
   case_id: string;
 
   @ApiProperty({ description: 'Outcome' })
