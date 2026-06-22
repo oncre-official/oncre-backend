@@ -62,7 +62,7 @@ export class PaymentService {
       normal: () =>
         this.payment.findAndCount(query, {
           aggregate: { skip, limit },
-          populate: [{ path: 'repayments' }, { path: 'customer' }],
+          populate: [],
           sort: { createdAt: -1 },
         }),
     };
