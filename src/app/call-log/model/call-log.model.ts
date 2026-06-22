@@ -16,7 +16,7 @@ export type CallLogDocument = HydratedDocument<CallLog>;
 })
 export class CallLog extends Document implements ICallLog {
   @ApiProperty({ description: 'Auto-generated: CL-00001' })
-  @Prop({ required: true, unique: true })
+  @Prop({ required: true })
   call_id: string;
 
   @ApiProperty({ description: 'Auto-generated: CA-00001' })

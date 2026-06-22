@@ -33,7 +33,7 @@ export class Merchant extends Document implements IMerchant {
   merchant_name: string;
 
   @ApiProperty({ description: 'Store name of the merchant', example: "John's Store" })
-  @Prop({ required: true })
+  @Prop({ required: false })
   merchant_store_name: string;
 
   @ApiProperty({ description: 'Phone number of the merchant', example: '+1234567890' })
@@ -41,7 +41,7 @@ export class Merchant extends Document implements IMerchant {
   merchant_phone: string;
 
   @ApiProperty({ description: 'Location of the merchant', example: '123 Main St, City, Country' })
-  @Prop({ required: true })
+  @Prop({ required: false })
   location: string;
 }
 

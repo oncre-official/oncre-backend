@@ -50,7 +50,7 @@ export enum MessageDeliveryStatus {
   CANCELLED = 'cancelled',
 }
 
-export enum CallOutcomeStatus {
+export enum CallStatus {
   SCHEDULED = 'scheduled',
   PENDING = 'pending',
   COMPLETED = 'completed',

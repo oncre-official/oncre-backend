@@ -3,7 +3,7 @@ import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
 import { Document, HydratedDocument } from 'mongoose';
 
 import { Case } from '@on/app/case/model/case.model';
-import { CallOutcomeStatus, CallType } from '@on/enum';
+import { CallStatus, CallType } from '@on/enum';
 
 import { ICall } from '../types/call.interface';
 
@@ -47,8 +47,8 @@ export class Call extends Document implements ICall {
   call_type: CallType;
 
   @ApiProperty({ required: false })
-  @Prop({ enum: CallOutcomeStatus, required: false })
-  status: CallOutcomeStatus;
+  @Prop({ enum: CallStatus, required: false })
+  status: CallStatus;
 
   @ApiProperty({ required: false })
   @Prop({ Type: Date, required: false })

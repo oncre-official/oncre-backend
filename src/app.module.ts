@@ -5,6 +5,8 @@ import { ScheduleModule } from '@nestjs/schedule';
 
 import { AdminModule } from './app/admin/admin.module';
 import { AuthModule } from './app/auth/auth.module';
+import { CallModule } from './app/call/call.module';
+import { CallLogModule } from './app/call-log/call-log.module';
 import { CaseModule } from './app/case/case.module';
 import { CreditModule } from './app/credit/credit.module';
 import { CronModule } from './app/cron/cron.module';
@@ -28,6 +30,8 @@ import { HttpExceptionFilter } from './handlers/exceptions/http-exception.filter
     SharedModule,
     CreditModule,
     CaseModule,
+    CallModule,
+    CallLogModule,
     CronModule,
     CustomerModule,
     MerchantModule,

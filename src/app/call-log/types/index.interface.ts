@@ -1,4 +1,4 @@
-import { Call } from '../model/call.model';
+import { Call } from '@on/app/call/model/call.model';
 
 export interface IHandleOutcome {
   call: Call;

@@ -1,16 +1,18 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 
+import { Call } from '@on/app/call/model/call.model';
+import { CallRepository } from '@on/app/call/repository/call.repository';
 import { isCaseOnHold } from '@on/app/case/helper/indexx';
 import { MessageRepository } from '@on/app/message/repository/message.repository';
+import { TrancheType } from '@on/app/payment/dto/plan.dto';
+import { PaymentService } from '@on/app/payment/payment.service';
 import { SharedService } from '@on/app/shared/shared.service';
 import { normalizePhone } from '@on/helpers/phone';
 import { TermiiService } from '@on/services/termii/service';
 
 import { buildMissedCallMessage } from '../helpers/missed';
 import { CallLog } from '../model/call-log.model';
-import { Call } from '../model/call.model';
 import { CallLogRepository } from '../repository/call-log.repository';
-import { CallRepository } from '../repository/call.repository';
 import { IHandleOutcome } from '../types/index.interface';
 
 type OutcomeHandler = (call: Call, note?: string) => Promise<void>;
@@ -24,6 +26,7 @@ export class OutcomeService {
     private readonly shared: SharedService,
     private readonly termii: TermiiService,
     private readonly log: CallLogRepository,
+    private readonly payment: PaymentService,
     private readonly message: MessageRepository,
   ) {}
 
@@ -153,9 +156,15 @@ export class OutcomeService {
   }
 
   private async handlePaymentPlan(call: Call) {
-    console.log(call);
+    const { case_id } = call;
 
-    await this.call.findById(call?._id);
+    const planPayload = {
+      case_id,
+      type: TrancheType.Week,
+      value: 4,
+    };
+
+    await this.payment.createPlan(planPayload);
   }
 
   private async handlePartialPayment(call: Call) {

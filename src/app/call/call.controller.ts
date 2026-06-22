@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Query, Req, Res, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags, ApiUnprocessableEntityResponse } from '@nestjs/swagger';
 
 import { Roles } from '@on/decorators/roles.decorator';
@@ -11,7 +11,6 @@ import { JwtAuthGuard } from '../auth/guard/auth.guard';
 import { RoleGuard } from '../auth/guard/role.guard';
 
 import { CallService } from './call.service';
-import { LogCallDto } from './dto/log.dto';
 import { QueryCallDto } from './dto/query.dto';
 import { Call } from './model/call.model';
 
@@ -61,25 +60,6 @@ export class CallController {
       const filter = requestFilter(query, { convertToRegex: false });
 
       const response = await this.callService.findList(filter, skip, limit);
-
-      return JsonResponse(res, response);
-    } catch (error) {
-      return ErrorResponse(res, error, req);
-    }
-  }
-
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Log Call',
-    description: 'Allows admin log calls',
-  })
-  @ApiOkResponse({ description: 'Log call outcomes', type: ApiResponseDTO })
-  @Roles('admin', 'super-admin', 'recovery')
-  @UseGuards(JwtAuthGuard, RoleGuard)
-  @Post('/log')
-  async logCalls(@Body() payload: LogCallDto, @Res() res: Response, @Req() req: Request): Promise<ResponseDTO> {
-    try {
-      const response = await this.callService.log(payload);
 
       return JsonResponse(res, response);
     } catch (error) {

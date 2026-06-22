@@ -1,4 +1,4 @@
-import { CallOutcomeStatus, CallType } from '@on/enum';
+import { CallStatus, CallType } from '@on/enum';
 import { IBaseType } from '@on/utils/types';
 
 export interface ICall extends IBaseType {
@@ -9,14 +9,6 @@ export interface ICall extends IBaseType {
   debtor_phone?: string;
   day?: number;
   call_type: CallType;
-  status: CallOutcomeStatus;
+  status: CallStatus;
   scheduled_for: Date;
-}
-
-export interface ICallLog extends IBaseType {
-  call_id: string;
-  case_id: string;
-  outcome: string;
-  note?: string;
-  called_at?: Date;
 }

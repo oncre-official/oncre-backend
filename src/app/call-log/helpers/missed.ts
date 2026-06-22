@@ -1,4 +1,4 @@
-import { Call } from '../model/call.model';
+import { Call } from '@on/app/call/model/call.model';
 
 export function buildMissedCallMessage(call: Call): string {
   const day = call.day ?? 0;

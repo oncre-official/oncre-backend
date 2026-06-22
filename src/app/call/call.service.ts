@@ -1,22 +1,15 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
-import { ObjectId } from 'mongodb';
+import { Injectable } from '@nestjs/common';
 
-import { CallOutcomeStatus } from '@on/enum';
+import { CallStatus } from '@on/enum';
 import { joinSearchQuery } from '@on/helpers/search';
 import { ServiceResponse } from '@on/utils/types';
 
-import { LogCallDto } from './dto/log.dto';
 import { QueryCallDto } from './dto/query.dto';
-import { CallLog } from './model/call-log.model';
 import { CallRepository } from './repository/call.repository';
-import { OutcomeService } from './service/outcome.service';
 
 @Injectable()
 export class CallService {
-  constructor(
-    private readonly call: CallRepository,
-    private readonly outcome: OutcomeService,
-  ) {}
+  constructor(private readonly call: CallRepository) {}
 
   async find(query: QueryCallDto, skip: number = 0, limit: number = 20): Promise<ServiceResponse<any>> {
     const { search } = query;
@@ -25,16 +18,7 @@ export class CallService {
       search,
       fields: [],
       query,
-      joins: [
-        {
-          from: 'customers',
-          localField: 'customerId',
-          foreignField: '_id',
-          as: 'customer',
-          searchFields: ['name', 'phone'],
-        },
-        { from: 'repayments', localField: '_id', foreignField: 'callId', as: 'repayments', unwind: false },
-      ],
+      joins: [],
     });
 
     const strategies = {
@@ -42,7 +26,7 @@ export class CallService {
       normal: () =>
         this.call.findAndCount(query, {
           aggregate: { skip, limit },
-          populate: [{ path: 'repayments' }, { path: 'customer' }],
+          populate: [{ path: 'case' }],
           sort: { createdAt: -1 },
         }),
     };
@@ -60,6 +44,7 @@ export class CallService {
     const caseFilter = {
       'case.status': 'ACTIVE',
       scheduled_for: { $lte: now },
+      status: { $ne: CallStatus.COMPLETED },
     };
 
     let pipeline: any[] = [];
@@ -85,20 +70,5 @@ export class CallService {
     });
 
     return { data, message: 'calls successfully fetched' };
-  }
-
-  async log(payload: LogCallDto): Promise<ServiceResponse<CallLog>> {
-    const { call_id, outcome, note } = payload;
-
-    const callId = new ObjectId(String(call_id));
-
-    const call = await this.call.findById(callId, { populate: [{ path: 'case', populate: { path: 'merchant' } }] });
-    if (!call) throw new BadRequestException('Call with id not found');
-
-    if (call.status === CallOutcomeStatus.COMPLETED) throw new BadRequestException('Call has already been logged');
-
-    const data = await this.outcome.handleOutcome({ call, outcome, note });
-
-    return { data, message: `Merchant successfully created` };
   }
 }
