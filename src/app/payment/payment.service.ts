@@ -9,7 +9,7 @@ import { PaystackService } from '@on/services/paystack/service';
 import { IInitializePayment } from '@on/services/paystack/type';
 import { ServiceResponse } from '@on/utils/types';
 
-import { isCaseOnHold } from '../case/helper/indexx';
+import { isCaseOnHold } from '../case/helper';
 import { Case } from '../case/model/case.model';
 import { CaseRepository } from '../case/repository/case.repository';
 import { CallService } from '../case/services/call.service';

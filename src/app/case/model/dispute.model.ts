@@ -12,10 +12,7 @@ export type DisputeDocument = HydratedDocument<Dispute>;
 @Schema({
   collection: 'disputes',
   versionKey: false,
-  timestamps: {
-    createdAt: 'created_at',
-    updatedAt: 'updated_at',
-  },
+  timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
 })
 export class Dispute extends Document implements IDispute {
   @ApiProperty({ description: 'Auto-generated: CL-00001' })

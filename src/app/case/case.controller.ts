@@ -15,6 +15,7 @@ import { User as UserDocument } from '../user/model/user.model';
 import { CaseService } from './case.service';
 import { CreateCaseDto } from './dto/case.dto';
 import { QueryCaseDto } from './dto/query.dto';
+import { TransitionCaseDto } from './dto/transition.dto';
 import { Case } from './model/case.model';
 
 import type { Response, Request } from 'express';
@@ -112,6 +113,31 @@ export class CaseController {
   ): Promise<ResponseDTO> {
     try {
       const response = await this.caseService.escalateDispute(user, id);
+
+      return JsonResponse(res, response);
+    } catch (error) {
+      return ErrorResponse(res, error, req);
+    }
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Transition case',
+    description: 'Allows admin transition case',
+  })
+  @ApiOkResponse({ description: 'Case transitioned Successfully', type: ApiResponseDTO })
+  @Roles('admin', 'super-admin', 'recovery')
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Post('/:id/transition')
+  async transition(
+    @Param('id') id: string,
+    @Body() payload: TransitionCaseDto,
+    @User() user: UserDocument,
+    @Res() res: Response,
+    @Req() req: Request,
+  ): Promise<ResponseDTO> {
+    try {
+      const response = await this.caseService.transitionCase(user, id, payload);
 
       return JsonResponse(res, response);
     } catch (error) {

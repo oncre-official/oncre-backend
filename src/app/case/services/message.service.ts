@@ -3,14 +3,16 @@ import { Injectable, Logger } from '@nestjs/common';
 import { MerchantRepository } from '@on/app/merchant/repository/merchant.repository';
 import { MessageRepository } from '@on/app/message/repository/message.repository';
 import { ActionType } from '@on/enum';
-import { addDaysUTC, today } from '@on/helpers/date';
+import { addDaysUTC, getNextMondays, today } from '@on/helpers/date';
 import { normalizePhone } from '@on/helpers/phone';
 import { TermiiService } from '@on/services/termii/service';
 
+import { getEscalationLevel, isCaseOnHold } from '../helper';
 import { CASE_ACTIVATION_MESSAGES, CASE_ESCALATION_MESSAGES, ESCALATION_DAYS } from '../helper/activation';
-import { getEscalationLevel, isCaseOnHold } from '../helper/indexx';
+import { buildPassiveRecoveryMessage } from '../helper/transition';
 import { Case } from '../model/case.model';
 import { CaseRepository } from '../repository/case.repository';
+import { CaseStatus } from '../types/case.interface';
 
 @Injectable()
 export class MessageService {
@@ -167,10 +169,60 @@ export class MessageService {
     return scheduled;
   }
 
+  async schedulePassive(caze: Case) {
+    const { merchant_id, case_id, debtor_name, amount, debtor_phone } = caze;
+
+    const merchant = await this.merchant.findById(merchant_id);
+
+    const nextMondays = getNextMondays(4);
+    let scheduled = 0;
+
+    for (let week = 0; week < nextMondays.length; week++) {
+      const scheduledFor = nextMondays[week];
+
+      const existing = await this.message.findOne({
+        case_id,
+        message_type: 'passive_recovery',
+        message_index: week + 1,
+      });
+
+      if (existing) continue;
+
+      await this.message.create({
+        case_id,
+        merchant_id,
+        debtor_phone,
+        day: null,
+        message_type: 'passive_recovery',
+        message_index: week + 1,
+        action_type: ActionType.SMS,
+        message_body: buildPassiveRecoveryMessage({
+          debtor_name,
+          amount,
+          merchant_name: merchant?.merchant_name,
+        }),
+        scheduled_for: scheduledFor,
+        delivery_status: 'scheduled',
+        message_tier: null,
+        sent_at: null,
+        termii_message_id: null,
+        error_details: null,
+        cancelled_reason: null,
+        credit_id: '',
+        customer_key: 'debtor',
+        customer_phone: debtor_phone,
+      });
+
+      scheduled++;
+    }
+
+    return scheduled;
+  }
+
   async process(newCase: Case) {
     const { case_id, activated_at } = newCase;
 
-    if (newCase.status !== 'ACTIVE' || newCase.is_paused) return;
+    if (newCase.status !== CaseStatus.ACTIVE || newCase.is_paused) return;
     if (isCaseOnHold(newCase)) return;
 
     const todayDate = today();

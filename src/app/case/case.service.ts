@@ -12,14 +12,18 @@ import { User } from '../user/model/user.model';
 
 import { CreateCaseDto } from './dto/case.dto';
 import { QueryCaseDto } from './dto/query.dto';
+import { TransitionCaseDto } from './dto/transition.dto';
 import { Case } from './model/case.model';
 import { Dispute } from './model/dispute.model';
+import { Transition } from './model/transition.model';
 import { CaseRepository } from './repository/case.repository';
 import { DisputeRepository } from './repository/dispute.repository';
+import { TransitionRepository } from './repository/transition.repository';
 import { CallService } from './services/call.service';
 import { MessageService } from './services/message.service';
 import { CaseStatus } from './types/case.interface';
 import { DisputeStatus } from './types/dispute.interface';
+import { TransitionOutcome } from './types/transition.interface';
 
 @Injectable()
 export class CaseService {
@@ -31,6 +35,7 @@ export class CaseService {
     private readonly dispute: DisputeRepository,
     private readonly customer: CustomerRepository,
     private readonly merchant: MerchantRepository,
+    private readonly transition: TransitionRepository,
   ) {}
 
   async find(query: QueryCaseDto, skip: number = 0, limit: number = 20): Promise<ServiceResponse<any>> {
@@ -160,5 +165,109 @@ export class CaseService {
     );
 
     return { data: dispute, message: `Dispute Escalated successfully` };
+  }
+
+  async transitionCase(user: User, id: string, payload: TransitionCaseDto): Promise<ServiceResponse<Transition>> {
+    const { outcome } = payload;
+
+    const caze = await this.cases.findById(id);
+    if (!caze) throw new NotFoundException('Case not found');
+
+    if (caze.status !== CaseStatus.PENDING_TRANSITION) throw new BadRequestException('Case not awaiting transition');
+
+    let transition;
+
+    switch (outcome) {
+      case TransitionOutcome.FULLY_RECOVERED:
+        transition = this.fullyRecovered(caze, user, payload);
+        break;
+      case TransitionOutcome.PARTIALLY_RECOVERED:
+        transition = this.partialRecovered(caze, user, payload);
+        break;
+      case TransitionOutcome.ESCALATE_TO_LEGAL:
+        transition = this.escalateLegal(caze, user, payload);
+        break;
+      case TransitionOutcome.WRITE_OFF:
+        transition = this.writeOff(caze, user, payload);
+    }
+
+    return { data: transition, message: `Case transitioned successfully` };
+  }
+
+  /**
+   * PRIVATE METHODS
+   */
+  private async fullyRecovered(caze: Case, user: User, payload: TransitionCaseDto) {
+    await this.cases.updateOne(
+      { case_id: caze.case_id },
+      {
+        status: CaseStatus.FULLY_RECOVERED,
+        transition_completed_at: new Date(),
+      },
+    );
+
+    await this.transition.create({
+      case_id: caze.case_id,
+      outcome: TransitionOutcome.FULLY_RECOVERED,
+      note: payload.note,
+      actioned_by: user._id,
+      actioned_at: new Date(),
+    });
+  }
+
+  private async partialRecovered(caze: Case, user: User, payload: TransitionCaseDto) {
+    await this.cases.updateOne(
+      { case_id: caze.case_id },
+      {
+        status: CaseStatus.PARTIALLY_RECOVERED,
+        transition_completed_at: new Date(),
+      },
+    );
+
+    await this.transition.create({
+      case_id: caze.case_id,
+      outcome: TransitionOutcome.PARTIALLY_RECOVERED,
+      note: payload.note,
+      actioned_by: user._id,
+      actioned_at: new Date(),
+    });
+
+    await this.message.schedulePassive(caze);
+  }
+
+  private async escalateLegal(caze: Case, user: User, payload: TransitionCaseDto) {
+    await this.cases.updateOne(
+      { case_id: caze.case_id },
+      {
+        status: CaseStatus.LEGAL,
+        transition_completed_at: new Date(),
+      },
+    );
+
+    await this.transition.create({
+      case_id: caze.case_id,
+      outcome: TransitionOutcome.ESCALATE_TO_LEGAL,
+      note: payload.note,
+      actioned_by: user._id,
+      actioned_at: new Date(),
+    });
+  }
+
+  private async writeOff(caze: Case, user: User, payload: TransitionCaseDto) {
+    await this.cases.updateOne(
+      { case_id: caze.case_id },
+      {
+        status: CaseStatus.WRITE_OFF,
+        transition_completed_at: new Date(),
+      },
+    );
+
+    await this.transition.create({
+      case_id: caze.case_id,
+      outcome: TransitionOutcome.ESCALATE_TO_LEGAL,
+      note: payload.note,
+      actioned_by: user._id,
+      actioned_at: new Date(),
+    });
   }
 }

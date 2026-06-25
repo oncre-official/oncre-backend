@@ -111,6 +111,18 @@ export class Case extends Document implements ICase {
   @Prop({ Type: Number, required: false })
   outstanding_balance?: number;
 
+  @ApiProperty({ required: false })
+  @Prop({ Type: Boolean, required: false })
+  transition_required?: boolean;
+
+  @ApiProperty({ required: false })
+  @Prop({ Type: Date, required: false })
+  transition_due_at?: Date;
+
+  @ApiProperty({ required: false })
+  @Prop({ Type: Date, required: false })
+  transition_completed_at?: Date;
+
   /**
    * ATTRIBUTES
    */

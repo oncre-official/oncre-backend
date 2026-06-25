@@ -195,3 +195,21 @@ export function formatDate(date: Date | null): string {
     timeZone: 'UTC',
   });
 }
+
+export function getNextMondays(count: number): Date[] {
+  const mondays: Date[] = [];
+
+  const current = new Date();
+  const day = current.getUTCDay();
+
+  const daysUntilMonday = day === 1 ? 7 : (8 - day) % 7;
+
+  current.setUTCDate(current.getUTCDate() + daysUntilMonday);
+
+  for (let i = 0; i < count; i++) {
+    mondays.push(new Date(current));
+    current.setUTCDate(current.getUTCDate() + 7);
+  }
+
+  return mondays;
+}

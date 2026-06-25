@@ -2,7 +2,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 
 import { Call } from '@on/app/call/model/call.model';
 import { CallRepository } from '@on/app/call/repository/call.repository';
-import { isCaseOnHold } from '@on/app/case/helper/indexx';
+import { isCaseOnHold } from '@on/app/case/helper';
 import { DisputeRepository } from '@on/app/case/repository/dispute.repository';
 import { CaseStatus } from '@on/app/case/types/case.interface';
 import { MessageRepository } from '@on/app/message/repository/message.repository';

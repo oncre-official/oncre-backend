@@ -9,8 +9,13 @@ export enum RecoveryMode {
 export enum CaseStatus {
   ACTIVE = 'ACTIVE',
   LEGAL = 'LEGAL',
+  WRITE_OFF = 'WRITE_OFF',
   DISPUTED = 'DISPUTED',
   COMPLETED = 'COMPLETED',
+  PENDING_TRANSITION = 'PENDING_TRANSITION',
+  FULLY_RECOVERED = 'FULLY_RECOVERED',
+  PARTIALLY_RECOVERED = 'PARTIALLY_RECOVERED',
+  WRITTEN_OFF = 'WRITTEN_OFF',
 }
 
 export interface ICase extends IBaseType {
@@ -42,4 +47,8 @@ export interface ICase extends IBaseType {
   recovery_mode?: RecoveryMode;
   payment_plan_id?: string;
   outstanding_balance?: number;
+
+  transition_required?: boolean;
+  transition_due_at?: Date;
+  transition_completed_at?: Date;
 }

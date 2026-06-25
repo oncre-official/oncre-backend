@@ -15,8 +15,10 @@ import { CaseController } from './case.controller';
 import { CaseService } from './case.service';
 import { Case, CaseSchema } from './model/case.model';
 import { Dispute, DisputeSchema } from './model/dispute.model';
+import { Transition, TransitionSchema } from './model/transition.model';
 import { CaseRepository } from './repository/case.repository';
 import { DisputeRepository } from './repository/dispute.repository';
+import { TransitionRepository } from './repository/transition.repository';
 import { CallService } from './services/call.service';
 import { MessageService } from './services/message.service';
 
@@ -25,6 +27,7 @@ import { MessageService } from './services/message.service';
     MongooseModule.forFeature([
       { name: Case.name, schema: CaseSchema },
       { name: Dispute.name, schema: DisputeSchema },
+      { name: Transition.name, schema: TransitionSchema },
     ]),
     UserModule,
     RoleModule,
@@ -40,10 +43,11 @@ import { MessageService } from './services/message.service';
     CaseService,
     CallService,
     CaseRepository,
-    DisputeRepository,
     MessageService,
     TermiiService,
+    DisputeRepository,
+    TransitionRepository,
   ],
-  exports: [CaseRepository, CaseService, CallService, MessageService, CaseRepository, DisputeRepository],
+  exports: [CaseService, CallService, MessageService, CaseRepository, DisputeRepository, TransitionRepository],
 })
 export class CaseModule {}
