@@ -75,7 +75,7 @@ export class CaseService {
     await this.customer.find(cusPayload);
 
     const caseQuery = {
-      merchant_id: merchant?._id,
+      merchant_id: merchant?.merchant_id,
       debtor_phone,
       amount: Number(amount),
       due_date: new Date(due_date),
@@ -89,7 +89,7 @@ export class CaseService {
 
     const data = await this.cases.create({
       case_id: caseId,
-      merchant_id: merchant?._id,
+      merchant_id: merchant?.merchant_id,
       escalation_level: 1,
       current_day: 0,
       status: 'ACTIVE',
@@ -105,7 +105,7 @@ export class CaseService {
       this.message.process(data),
     ]);
 
-    return { data, message: `Merchant successfully created` };
+    return { data, message: `Case successfully created` };
   }
 
   async resolveDispute(creator: User, disputeId: string): Promise<ServiceResponse<Dispute>> {

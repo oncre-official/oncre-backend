@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, ConflictException } from '@nestjs/common';
 import { ObjectId } from 'mongodb';
 
 import { CallStatus } from '@on/enum';
@@ -8,6 +8,7 @@ import { CallRepository } from '../call/repository/call.repository';
 
 import { LogCallDto } from './dto/log.dto';
 import { CallLog } from './model/call-log.model';
+import { CallLogRepository } from './repository/call-log.repository';
 import { OutcomeService } from './service/outcome.service';
 
 @Injectable()
@@ -15,6 +16,7 @@ export class CallLogService {
   constructor(
     private readonly call: CallRepository,
     private readonly outcome: OutcomeService,
+    private readonly callLog: CallLogRepository,
   ) {}
 
   async log(payload: LogCallDto): Promise<ServiceResponse<CallLog>> {
@@ -26,6 +28,9 @@ export class CallLogService {
     if (!call) throw new BadRequestException('Call with id not found');
 
     if (call.status === CallStatus.COMPLETED) throw new BadRequestException('Call has already been logged');
+
+    const callLogged = await this.callLog.findOne({ call_id: call.call_id });
+    if (callLogged) throw new ConflictException('Call already logged');
 
     const data = await this.outcome.handleOutcome({ call, outcome, note });
 

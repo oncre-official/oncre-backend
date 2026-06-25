@@ -101,7 +101,7 @@ export class OutcomeService {
     },
 
     DISPUTED: async (call: Call, callLog?: CallLog) => {
-      await Promise.call([this.handleDispute(call, callLog), this.pauseEngine(call, 'Case Disputed')]);
+      await Promise.all([this.handleDispute(call, callLog), this.pauseEngine(call, 'Case Disputed')]);
     },
 
     UNREACHABLE: async (call) => {

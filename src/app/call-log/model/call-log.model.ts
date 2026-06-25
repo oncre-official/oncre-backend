@@ -2,7 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { ApiProperty } from '@nestjs/swagger';
 import { Document, HydratedDocument } from 'mongoose';
 
-import { ICallLog } from '../types/call.interface';
+import { ICallLog } from '../types/call-log.interface';
 
 export type CallLogDocument = HydratedDocument<CallLog>;
 
