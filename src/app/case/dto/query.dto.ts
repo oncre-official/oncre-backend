@@ -2,7 +2,7 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 
 import { QueryDto } from '@on/utils/dto/query.dto';
 
-import { RecoveryMode } from '../types/case.interface';
+import { CaseStatus, RecoveryMode } from '../types/case.interface';
 
 export class QueryCaseDto extends QueryDto {
   @ApiPropertyOptional()
@@ -17,8 +17,8 @@ export class QueryCaseDto extends QueryDto {
   @ApiPropertyOptional()
   amount?: number;
 
-  @ApiPropertyOptional()
-  status?: string;
+  @ApiPropertyOptional({ enum: CaseStatus })
+  status?: CaseStatus;
 
   @ApiPropertyOptional()
   escalation_level?: number;

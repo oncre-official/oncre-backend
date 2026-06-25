@@ -43,4 +43,9 @@ export const config = {
     chatHookUrl: process.env.MSG_SLACK_API_HOOK_URL,
     requestHookUrl: process.env.TRADES_SLACK_API_HOOK_URL,
   },
+  brevo: {
+    apiKey: process.env.BREVO_API_KEY,
+    sendEmail: process.env.BREVO_SENDER_EMAIL || 'noreply@amealp.com',
+    replyEmail: process.env.BREVO_REPLY_EMAIL || 'info@amealp.com',
+  },
 };

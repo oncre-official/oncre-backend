@@ -14,13 +14,18 @@ import { UserModule } from '../user/user.module';
 import { CaseController } from './case.controller';
 import { CaseService } from './case.service';
 import { Case, CaseSchema } from './model/case.model';
+import { Dispute, DisputeSchema } from './model/dispute.model';
 import { CaseRepository } from './repository/case.repository';
+import { DisputeRepository } from './repository/dispute.repository';
 import { CallService } from './services/call.service';
 import { MessageService } from './services/message.service';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Case.name, schema: CaseSchema }]),
+    MongooseModule.forFeature([
+      { name: Case.name, schema: CaseSchema },
+      { name: Dispute.name, schema: DisputeSchema },
+    ]),
     UserModule,
     RoleModule,
     CallModule,
@@ -30,7 +35,15 @@ import { MessageService } from './services/message.service';
     CustomerModule,
   ],
   controllers: [CaseController],
-  providers: [CaseRepository, CaseService, CallService, CaseRepository, MessageService, TermiiService],
-  exports: [CaseRepository, CaseService, CallService, MessageService, CaseRepository],
+  providers: [
+    CaseRepository,
+    CaseService,
+    CallService,
+    CaseRepository,
+    DisputeRepository,
+    MessageService,
+    TermiiService,
+  ],
+  exports: [CaseRepository, CaseService, CallService, MessageService, CaseRepository, DisputeRepository],
 })
 export class CaseModule {}

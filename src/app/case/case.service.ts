@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { ObjectId } from 'mongodb';
 
 import { joinSearchQuery } from '@on/helpers/search';
@@ -13,9 +13,13 @@ import { User } from '../user/model/user.model';
 import { CreateCaseDto } from './dto/case.dto';
 import { QueryCaseDto } from './dto/query.dto';
 import { Case } from './model/case.model';
+import { Dispute } from './model/dispute.model';
 import { CaseRepository } from './repository/case.repository';
+import { DisputeRepository } from './repository/dispute.repository';
 import { CallService } from './services/call.service';
 import { MessageService } from './services/message.service';
+import { CaseStatus } from './types/case.interface';
+import { DisputeStatus } from './types/dispute.interface';
 
 @Injectable()
 export class CaseService {
@@ -24,6 +28,7 @@ export class CaseService {
     private readonly cases: CaseRepository,
     private readonly shared: SharedService,
     private readonly message: MessageService,
+    private readonly dispute: DisputeRepository,
     private readonly customer: CustomerRepository,
     private readonly merchant: MerchantRepository,
   ) {}
@@ -43,7 +48,7 @@ export class CaseService {
       normal: () =>
         this.cases.findAndCount(query, {
           aggregate: { skip, limit },
-          populate: [{ path: 'merchant' }],
+          populate: [{ path: 'merchant' }, { path: 'dispute', match: { status: DisputeStatus.OPEN } }],
           sort: { createdAt: -1 },
         }),
     };
@@ -101,5 +106,59 @@ export class CaseService {
     ]);
 
     return { data, message: `Merchant successfully created` };
+  }
+
+  async resolveDispute(creator: User, disputeId: string): Promise<ServiceResponse<Dispute>> {
+    const dispute = await this.dispute.findById(disputeId, { populate: [{ path: 'case' }] });
+    if (!dispute) throw new NotFoundException('Dispute Not found');
+
+    if (dispute.status !== DisputeStatus.OPEN) throw new BadRequestException('Dispute already processed');
+
+    await this.cases.updateOne(
+      { case_id: dispute.case_id },
+      {
+        status: CaseStatus.ACTIVE,
+        is_paused: false,
+        pause_reason: null,
+      },
+    );
+
+    await this.dispute.updateOne(
+      { _id: disputeId },
+      {
+        status: DisputeStatus.RESOLVED,
+        resolved_by: creator?._id,
+        resolved_at: new Date(),
+      },
+    );
+
+    return { data: dispute, message: `Dispute Resolve successfully` };
+  }
+
+  async escalateDispute(creator: User, disputeId: string): Promise<ServiceResponse<Dispute>> {
+    const dispute = await this.dispute.findById(disputeId, { populate: [{ path: 'case' }] });
+    if (!dispute) throw new NotFoundException('Dispute Not found');
+
+    if (dispute.status !== DisputeStatus.OPEN) throw new BadRequestException('Dispute already processed');
+
+    await this.cases.updateOne(
+      { case_id: dispute.case_id },
+      {
+        status: 'LEGAL',
+        is_paused: true,
+        pause_reason: 'Escalated to Legal',
+      },
+    );
+
+    await this.dispute.updateOne(
+      { _id: disputeId },
+      {
+        status: DisputeStatus.ESCALATED,
+        escalated_by: creator?._id,
+        escalated_at: new Date(),
+      },
+    );
+
+    return { data: dispute, message: `Dispute Escalated successfully` };
   }
 }

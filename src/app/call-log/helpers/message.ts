@@ -1,4 +1,5 @@
 import { Call } from '@on/app/call/model/call.model';
+import { Case } from '@on/app/case/model/case.model';
 
 export function buildMissedCallMessage(call: Call): string {
   const day = call.day ?? 0;
@@ -15,4 +16,22 @@ export function buildMissedCallMessage(call: Call): string {
   };
 
   return messages[day] || base;
+}
+
+export function disputeRaisedContent(theCase: Case, note: string): { subject: string; content: string } {
+  const subject = `New Disputed, Case - ${theCase.case_id} Requires Review`;
+
+  const content = `
+    <h2>New Dispute Raised</h2>
+    <p>A case has been marked as <strong>DISPUTED</strong> and requires administrative review.</p>
+
+    <p><strong>Case ID:</strong> ${theCase.case_id}</p>
+    <p><strong>Merchant:</strong> ${theCase.merchant?.merchant_name}</p>
+    <p><strong>Recovery Officer Note:</strong></p>
+    <p>${note}</p>
+
+    <p>The case engine has been paused pending review.</p>
+  `;
+
+  return { subject, content };
 }

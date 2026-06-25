@@ -3,31 +3,37 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Call } from '@on/app/call/model/call.model';
 import { CallRepository } from '@on/app/call/repository/call.repository';
 import { isCaseOnHold } from '@on/app/case/helper/indexx';
+import { DisputeRepository } from '@on/app/case/repository/dispute.repository';
+import { CaseStatus } from '@on/app/case/types/case.interface';
 import { MessageRepository } from '@on/app/message/repository/message.repository';
 import { TrancheType } from '@on/app/payment/dto/plan.dto';
 import { PaymentService } from '@on/app/payment/payment.service';
 import { SharedService } from '@on/app/shared/shared.service';
 import { normalizePhone } from '@on/helpers/phone';
+import { BrevoService } from '@on/services/brevo/service';
 import { TermiiService } from '@on/services/termii/service';
+import { customEmail } from '@on/utils/templates/custom';
 
-import { buildMissedCallMessage } from '../helpers/missed';
+import { buildMissedCallMessage, disputeRaisedContent } from '../helpers/message';
 import { CallLog } from '../model/call-log.model';
 import { CallLogRepository } from '../repository/call-log.repository';
 import { IHandleOutcome } from '../types/index.interface';
 
-type OutcomeHandler = (call: Call, note?: string) => Promise<void>;
+type OutcomeHandler = (call: Call, callLog?: CallLog) => Promise<void>;
 
 @Injectable()
 export class OutcomeService {
   private readonly logger = new Logger(OutcomeService.name);
 
   constructor(
+    private readonly brevo: BrevoService,
     private readonly call: CallRepository,
     private readonly shared: SharedService,
     private readonly termii: TermiiService,
     private readonly log: CallLogRepository,
     private readonly payment: PaymentService,
     private readonly message: MessageRepository,
+    private readonly dispute: DisputeRepository,
   ) {}
 
   async handleOutcome(payload: IHandleOutcome): Promise<CallLog> {
@@ -36,15 +42,15 @@ export class OutcomeService {
     const handler = this.outcomeHandlers[outcome];
     if (!handler) throw new Error(`No handler for outcome: ${outcome}`);
 
-    await handler(call);
-
-    const callLog = await this.log.create({
+    const callLog: CallLog = await this.log.create({
       call_id: call.call_id,
       case_id: call.case_id,
       called_at: new Date(),
       outcome,
       note,
     });
+
+    await handler(call, callLog);
 
     await this.call.updateOne(
       { call_id: call.call_id },
@@ -94,10 +100,8 @@ export class OutcomeService {
       await this.pauseEngine(call, 'REFUSED');
     },
 
-    DISPUTED: async (call) => {
-      await this.handleDispute(call);
-
-      await this.pauseEngine(call, 'Case Disputed');
+    DISPUTED: async (call: Call, callLog?: CallLog) => {
+      await Promise.call([this.handleDispute(call, callLog), this.pauseEngine(call, 'Case Disputed')]);
     },
 
     UNREACHABLE: async (call) => {
@@ -106,7 +110,6 @@ export class OutcomeService {
 
     NUMBER_INVALID: async (call) => {
       await this.scheduleCallback(call);
-
       await this.pauseEngine(call, 'Invalid Number');
     },
   };
@@ -234,14 +237,26 @@ export class OutcomeService {
     });
   }
 
-  private async handleDispute(call: Call) {
+  private async handleDispute(call: Call, callLog?: CallLog) {
     if (!call.case) await call.populate('case');
     if (!call.case) throw new NotFoundException(`Case not found for call ${call.call_id}`);
 
+    await this.dispute.create({
+      case_id: call.case_id,
+      call_id: call.call_id,
+      call_log_id: callLog?._id,
+      note: callLog?.note || '',
+    });
+
     await call.case.updateOne({
-      status: 'DISPUTED',
+      status: CaseStatus.DISPUTED,
       is_paused: true,
     });
+
+    const emailContent = disputeRaisedContent(call.case, callLog?.note || '');
+    const mailMessage = customEmail(emailContent);
+
+    await this.brevo.sendMail('yoyoplenty@gmail.com', 'OnCre - New Case Disputed', mailMessage);
   }
 
   private async sendUnreachableSMS(call: Call) {

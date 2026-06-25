@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags, ApiUnprocessableEntityResponse } from '@nestjs/swagger';
 
 import { Roles } from '@on/decorators/roles.decorator';
@@ -64,6 +64,54 @@ export class CaseController {
   ): Promise<ResponseDTO> {
     try {
       const response = await this.caseService.create(user, payload);
+
+      return JsonResponse(res, response);
+    } catch (error) {
+      return ErrorResponse(res, error, req);
+    }
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Resolve Case Dispute',
+    description: 'Allows admin resolve case dispute',
+  })
+  @ApiOkResponse({ description: 'Dispute resolved Successfully', type: ApiResponseDTO })
+  @Roles('admin', 'super-admin', 'recovery')
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Post('/dispute/resolve/:id')
+  async resolveDispute(
+    @Param('id') id: string,
+    @User() user: UserDocument,
+    @Res() res: Response,
+    @Req() req: Request,
+  ): Promise<ResponseDTO> {
+    try {
+      const response = await this.caseService.resolveDispute(user, id);
+
+      return JsonResponse(res, response);
+    } catch (error) {
+      return ErrorResponse(res, error, req);
+    }
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Escalate Case Dispute',
+    description: 'Allows admin escalate case dispute',
+  })
+  @ApiOkResponse({ description: 'Dispute escalated Successfully', type: ApiResponseDTO })
+  @Roles('admin', 'super-admin', 'recovery')
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Post('/dispute/escalate/:id')
+  async escalateDispute(
+    @Param('id') id: string,
+    @User() user: UserDocument,
+    @Res() res: Response,
+    @Req() req: Request,
+  ): Promise<ResponseDTO> {
+    try {
+      const response = await this.caseService.escalateDispute(user, id);
 
       return JsonResponse(res, response);
     } catch (error) {

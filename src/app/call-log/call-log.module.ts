@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 
+import { BrevoService } from '@on/services/brevo/service';
 import { TermiiService } from '@on/services/termii/service';
 
 import { CallModule } from '../call/call.module';
+import { CaseModule } from '../case/case.module';
 import { MessageModule } from '../message/message.module';
 import { PaymentModule } from '../payment/payment.module';
 import { RoleModule } from '../role/role.module';
@@ -24,10 +26,11 @@ import { OutcomeService } from './service/outcome.service';
     CallModule,
     PaymentModule,
     SharedModule,
+    CaseModule,
     MessageModule,
   ],
   controllers: [CallLogController],
-  providers: [CallLogService, OutcomeService, TermiiService, CallLogRepository],
+  providers: [CallLogService, OutcomeService, TermiiService, CallLogRepository, BrevoService],
   exports: [CallLogService, CallLogRepository],
 })
 export class CallLogModule {}

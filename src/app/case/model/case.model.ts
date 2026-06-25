@@ -4,7 +4,9 @@ import { Document, HydratedDocument } from 'mongoose';
 
 import { Merchant } from '@on/app/merchant/model/merchant.model';
 
-import { ICase, RecoveryMode } from '../types/case.interface';
+import { CaseStatus, ICase, RecoveryMode } from '../types/case.interface';
+
+import { Dispute } from './dispute.model';
 
 export type CaseDocument = HydratedDocument<Case>;
 
@@ -54,8 +56,8 @@ export class Case extends Document implements ICase {
   due_date: Date;
 
   @ApiProperty({ required: false })
-  @Prop({ required: false })
-  status: string;
+  @Prop({ enum: CaseStatus, required: false })
+  status: CaseStatus;
 
   @ApiProperty({ required: false })
   @Prop({ Type: Number, required: false })
@@ -114,6 +116,9 @@ export class Case extends Document implements ICase {
    */
   @ApiHideProperty()
   merchant: Merchant;
+
+  @ApiHideProperty()
+  dispute: Dispute;
 }
 
 export const CaseSchema = SchemaFactory.createForClass(Case);
@@ -122,6 +127,13 @@ CaseSchema.virtual('merchant', {
   ref: 'Merchant',
   localField: 'merchant_id',
   foreignField: 'merchant_id',
+  justOne: true,
+});
+
+CaseSchema.virtual('dispute', {
+  ref: 'Dispute',
+  localField: 'case_id',
+  foreignField: 'case_id',
   justOne: true,
 });
 

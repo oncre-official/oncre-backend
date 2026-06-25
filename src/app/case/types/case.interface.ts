@@ -7,8 +7,12 @@ export enum RecoveryMode {
 }
 
 export enum CaseStatus {
+  ACTIVE = 'ACTIVE',
+  LEGAL = 'LEGAL',
+  DISPUTED = 'DISPUTED',
   COMPLETED = 'COMPLETED',
 }
+
 export interface ICase extends IBaseType {
   case_id: string;
   merchant_id: string;
@@ -22,7 +26,7 @@ export interface ICase extends IBaseType {
   description?: string;
   due_date: Date;
 
-  status: string;
+  status: CaseStatus;
   escalation_level: number;
   current_day: number;
 
