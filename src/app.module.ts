@@ -4,6 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ScheduleModule } from '@nestjs/schedule';
 
 import { AdminModule } from './app/admin/admin.module';
+import { AgentModule } from './app/agent/agent.module';
 import { AuthModule } from './app/auth/auth.module';
 import { CallModule } from './app/call/call.module';
 import { CallLogModule } from './app/call-log/call-log.module';
@@ -38,6 +39,7 @@ import { HttpExceptionFilter } from './handlers/exceptions/http-exception.filter
     MessageModule,
     PaymentModule,
     AdminModule,
+    AgentModule,
     ScheduleModule.forRoot(),
   ],
   controllers: [AppController],

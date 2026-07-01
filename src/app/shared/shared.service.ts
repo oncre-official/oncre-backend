@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
+import { CloudinaryService } from '@on/services/cloudinary/service';
+import { FileDto } from '@on/utils/dto/file.dto';
 import { ServiceResponse } from '@on/utils/types';
 
 import { LgaQueryDto, StateQueryDto } from './dto/state-local.dto';
@@ -15,6 +17,7 @@ export class SharedService {
     private readonly lga: LgaRepository,
     private readonly state: StateRepository,
     private readonly counter: CounterRepository,
+    private readonly cloudinary: CloudinaryService,
   ) {}
 
   async findState(query: StateQueryDto): Promise<ServiceResponse<State[]>> {
@@ -29,6 +32,14 @@ export class SharedService {
     });
 
     return { data, message: `Lga successfully fetched` };
+  }
+
+  async uploadFile(payload: FileDto): Promise<ServiceResponse<string | null>> {
+    const { file } = payload;
+
+    const url = file ? await this.cloudinary.uploadImage(file) : null;
+
+    return { data: url, message: `Lga successfully fetched` };
   }
 
   /**

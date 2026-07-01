@@ -1,5 +1,8 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { NestjsFormDataModule } from 'nestjs-form-data';
+
+import { CloudinaryService } from '@on/services/cloudinary/service';
 
 import { AuditLog, AuditLogSchema } from './model/audit-log.model';
 import { Counter, CounterSchema } from './model/counter.model';
@@ -20,9 +23,10 @@ import { SharedService } from './shared.service';
       { name: Counter.name, schema: CounterSchema },
       { name: AuditLog.name, schema: AuditLogSchema },
     ]),
+    NestjsFormDataModule,
   ],
   controllers: [SharedController],
-  providers: [StateRepository, LgaRepository, CounterRepository, AuditLogRepository, SharedService],
+  providers: [StateRepository, LgaRepository, CounterRepository, AuditLogRepository, SharedService, CloudinaryService],
   exports: [StateRepository, LgaRepository, CounterRepository, AuditLogRepository, SharedService],
 })
 export class SharedModule {}

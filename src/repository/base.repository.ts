@@ -65,6 +65,29 @@ export class BaseRepository<T> {
     return { row: data, count };
   }
 
+  async findOneOrCreate(query: GenericRecord, payload: GenericRecord = {}, options?: Options): Promise<T> {
+    const parsedQuery = normalizeMongoIds(query);
+    const parsedPayload = normalizeMongoIds(payload);
+
+    let queryBuilder: any = this.repository.findOne(parsedQuery);
+    if (options?.populate) queryBuilder = queryBuilder.populate(options.populate);
+
+    const existing = await queryBuilder.exec();
+    if (existing) return existing;
+
+    const document = await this.repository.create({
+      ...parsedQuery,
+      ...parsedPayload,
+    });
+
+    if (!options?.populate) return document;
+
+    return (await this.repository
+      .findById((document as any)._id)
+      .populate(options.populate)
+      .exec()) as T;
+  }
+
   async findOneAndCreate(query: GenericRecord, payload: GenericRecord, options?: Options): Promise<T> {
     const parsedQuery = normalizeMongoIds(query);
 

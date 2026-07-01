@@ -45,7 +45,12 @@ export const config = {
   },
   brevo: {
     apiKey: process.env.BREVO_API_KEY,
-    sendEmail: process.env.BREVO_SENDER_EMAIL || 'noreply@amealp.com',
-    replyEmail: process.env.BREVO_REPLY_EMAIL || 'info@amealp.com',
+    sendEmail: process.env.BREVO_SENDER_EMAIL || 'noreply@oncre.com',
+    replyEmail: process.env.BREVO_REPLY_EMAIL || 'info@oncre.com',
+  },
+  cloudinary: {
+    appKey: process.env.CLOUDINARY_ACCOUNT_KEY,
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+    apiSecret: process.env.CLOUDINARY_SECRET_KEY,
   },
 };

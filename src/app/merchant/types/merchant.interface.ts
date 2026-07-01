@@ -10,6 +10,7 @@ export interface IMerchant extends IBaseType {
   merchant_store_name: string;
   merchant_phone: string;
   location: string;
+  activated: boolean;
 }
 
 export interface ICreateMerchant {

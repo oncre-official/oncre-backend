@@ -43,6 +43,10 @@ export class Merchant extends Document implements IMerchant {
   @ApiProperty({ description: 'Location of the merchant', example: '123 Main St, City, Country' })
   @Prop({ required: false })
   location: string;
+
+  @ApiProperty({ description: 'Indicates whether the merchant is activated', example: true })
+  @Prop({ required: true, default: false })
+  activated: boolean;
 }
 
 export const MerchantSchema = SchemaFactory.createForClass(Merchant);
