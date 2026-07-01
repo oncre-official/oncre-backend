@@ -32,7 +32,8 @@ export class CaseController {
     description: 'Allows users get cases',
   })
   @ApiOkResponse({ description: 'Get cases successful ', type: [Case] })
-  @UseGuards(JwtAuthGuard)
+  @Roles('admin', 'super-admin', 'sales', 'field-agent', 'recovery')
+  @UseGuards(JwtAuthGuard, RoleGuard)
   @Get()
   async findCase(@Query() query: QueryCaseDto, @Res() res: Response, @Req() req: Request): Promise<ResponseDTO> {
     try {

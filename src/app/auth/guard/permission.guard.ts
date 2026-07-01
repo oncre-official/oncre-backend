@@ -3,14 +3,16 @@ import { Reflector } from '@nestjs/core';
 
 import { Permission } from '@on/app/role/model/permission.model';
 import { RoleRepository } from '@on/app/role/repository/role.repository';
+import { AuditLogRepository } from '@on/app/shared/repository/audit-log.repository';
 import { UserDocument } from '@on/app/user/model/user.model';
 
+import { BaseGuard } from './base.guard';
+
 @Injectable()
-export class PermissionGuard implements CanActivate {
-  constructor(
-    private reflector: Reflector,
-    private readonly role: RoleRepository,
-  ) {}
+export class PermissionGuard extends BaseGuard implements CanActivate {
+  constructor(reflector: Reflector, role: RoleRepository, auditLog: AuditLogRepository) {
+    super(reflector, role, auditLog);
+  }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const requiredPermissions = this.reflector.getAllAndOverride<string[]>('permissions', [
@@ -26,6 +28,12 @@ export class PermissionGuard implements CanActivate {
     const role = await this.role.findById(user.role_id, { populate: [{ path: 'permissions' }] });
     const userPermissions: string[] = role?.permissions?.map((permission: Permission) => permission.name) ?? [];
 
-    return requiredPermissions.every((permission) => userPermissions.includes(permission));
+    const hasPermission = requiredPermissions.every((permission) => userPermissions.includes(permission));
+
+    if (!hasPermission) {
+      await this.deny(context, 'Missing required permission');
+    }
+
+    return true;
   }
 }
