@@ -1,10 +1,11 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { ApiProperty } from '@nestjs/swagger';
+import { ObjectId } from 'mongodb';
 import { Document, HydratedDocument } from 'mongoose';
 
 import { PaymentStatus } from '@on/enum';
 
-import { IPayment } from '../types/payment.interface';
+import { IPayment, MerchantPaymentStatus, PaymentType } from '../types/payment.interface';
 
 export type PaymentDocument = HydratedDocument<Payment>;
 
@@ -21,9 +22,17 @@ export class Payment extends Document implements IPayment {
   @Prop({ type: String })
   payment_id: string;
 
-  @ApiProperty({ description: 'Auto-generated: CA-00001' })
-  @Prop({ required: true })
+  @ApiProperty()
+  @Prop({ type: String })
+  merchant_id: string;
+
+  @ApiProperty({ description: 'Case id' })
+  @Prop({ required: false })
   case_id: string;
+
+  @ApiProperty({ required: false })
+  @Prop({ enum: PaymentType, required: false })
+  type: PaymentType;
 
   @ApiProperty({ required: false })
   @Prop({ required: false })
@@ -38,16 +47,40 @@ export class Payment extends Document implements IPayment {
   status: PaymentStatus;
 
   @ApiProperty({ required: false })
+  @Prop({ enum: MerchantPaymentStatus, required: false })
+  merchant_status: MerchantPaymentStatus;
+
+  @ApiProperty({ required: false })
+  @Prop({ Type: String, required: false })
+  receipt_url: string;
+
+  @ApiProperty({ required: false })
   @Prop({ Type: String, required: false })
   reference: string;
 
   @ApiProperty({ required: false })
   @Prop({ Type: String, required: false })
-  provider?: string;
+  provider: string;
 
   @ApiProperty({ required: false })
   @Prop({ Type: String, required: false })
   payment_url: string;
+
+  @ApiProperty({ description: 'User who created the merchant', required: false })
+  @Prop({ type: ObjectId, ref: 'User', required: false })
+  uploaded_by: ObjectId;
+
+  @ApiProperty({ description: 'User who created the merchant', required: false })
+  @Prop({ type: ObjectId, ref: 'User', required: false })
+  confirmed_by: ObjectId;
+
+  @ApiProperty({ required: false })
+  @Prop({ Type: String, required: false })
+  rejection_reason: string;
+
+  @ApiProperty({ required: false })
+  @Prop({ Type: Date, required: false })
+  confirmed_at: Date;
 
   @ApiProperty({ required: false })
   @Prop({ Type: Date, required: false })
