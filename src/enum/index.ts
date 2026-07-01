@@ -10,8 +10,10 @@ export enum TokenType {
 
 export enum PaymentStatus {
   UNPAID = 'Unpaid',
-  PART_PAID = 'PartPaid',
+  PENDING = 'pending',
+  PARTIAL = 'partial',
   PAID = 'Paid',
+  FAILED = 'failed',
 }
 
 export enum MessageType {
@@ -56,13 +58,6 @@ export enum CallStatus {
   COMPLETED = 'completed',
   CLOSED = 'closed',
   CANCELLED = 'cancelled',
-}
-
-export enum CasePaymentStatus {
-  PENDING = 'pending',
-  PARTIAL = 'partial',
-  PAID = 'paid',
-  FAILED = 'failed',
 }
 
 export enum EventType {

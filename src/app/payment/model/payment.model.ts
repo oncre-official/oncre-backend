@@ -2,7 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { ApiProperty } from '@nestjs/swagger';
 import { Document, HydratedDocument } from 'mongoose';
 
-import { CasePaymentStatus } from '@on/enum';
+import { PaymentStatus } from '@on/enum';
 
 import { IPayment } from '../types/payment.interface';
 
@@ -34,8 +34,8 @@ export class Payment extends Document implements IPayment {
   amount_paid: number;
 
   @ApiProperty({ required: false })
-  @Prop({ enum: CasePaymentStatus, required: false })
-  status: CasePaymentStatus;
+  @Prop({ enum: PaymentStatus, required: false })
+  status: PaymentStatus;
 
   @ApiProperty({ required: false })
   @Prop({ Type: String, required: false })

@@ -1,4 +1,4 @@
-import { CasePaymentStatus } from '@on/enum';
+import { PaymentStatus } from '@on/enum';
 import { IBaseType } from '@on/utils/types';
 
 export interface IPayment extends IBaseType {
@@ -6,9 +6,9 @@ export interface IPayment extends IBaseType {
   case_id: string;
   amount: number;
   amount_paid: number;
-  status: CasePaymentStatus;
+  status: PaymentStatus;
   reference: string;
   provider?: string;
   payment_url: string;
-  paid_at: Date ;
+  paid_at: Date;
 }

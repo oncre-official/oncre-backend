@@ -82,7 +82,7 @@ export class PaymentService {
 
     if (existingCase.recovery_mode === RecoveryMode.PAYMENT_PLAN)
       throw new BadRequestException('Case already on payment plan');
-    if (existingCase.status === 'COMPLETED') throw new BadRequestException('Case already completed');
+    if (existingCase.status === CaseStatus.COMPLETED) throw new BadRequestException('Case already completed');
 
     const existingPlan = await this.plan.findOne({ case_id, status: PaymentPlanStatus.ACTIVE });
     if (existingPlan) throw new ConflictException('An active payment plan already exists for this case');
@@ -262,7 +262,7 @@ export class PaymentService {
     const { reference, case_id } = payment;
 
     const totalPaid = payment.amount_paid + amountPaid;
-    const status = totalPaid >= payment.amount ? PaymentStatus.PAID : PaymentStatus.PART_PAID;
+    const status = totalPaid >= payment.amount ? PaymentStatus.PAID : PaymentStatus.PARTIAL;
 
     const theCase = await this.cases.findOne({ case_id });
 
