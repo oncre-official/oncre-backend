@@ -11,7 +11,8 @@ export enum PaymentType {
 export enum MerchantPaymentStatus {
   PENDING = 'pending',
   CONFIRMED = 'confirmed',
-  REJECTED = 'rejected',
+  FLAGGED = 'flagged',
+  FOLLOW_UP = 'follow_up',
 }
 
 export interface IPayment extends IBaseType {

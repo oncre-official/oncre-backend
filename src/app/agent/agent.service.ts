@@ -219,11 +219,11 @@ export class AgentService {
     if (!agent) throw new NotFoundException('Merchant owner not found.');
 
     switch (status) {
-      case ActivationStatus.REJECTED:
+      case ActivationStatus.FLAGGED:
         {
           await payment.updateOne({
             status: PaymentStatus.UNPAID,
-            merchant_status: MerchantPaymentStatus.REJECTED,
+            merchant_status: MerchantPaymentStatus.FLAGGED,
             rejection_reason,
             confirmed_by: admin._id,
             confirmed_at: new Date(),
@@ -231,10 +231,28 @@ export class AgentService {
 
           result = {
             data: payment,
-            message: 'Merchant payment rejected successfully.',
+            message: 'Merchant payment flagged successfully.',
           };
         }
         break;
+
+      case ActivationStatus.FOLLOW_UP:
+        {
+          await payment.updateOne({
+            status: PaymentStatus.UNPAID,
+            merchant_status: MerchantPaymentStatus.FOLLOW_UP,
+            rejection_reason,
+            confirmed_by: admin._id,
+            confirmed_at: new Date(),
+          });
+
+          result = {
+            data: payment,
+            message: 'Merchant payment updated successfully.',
+          };
+        }
+        break;
+
       case ActivationStatus.APPROVED: {
         const commission = payment.amount * 0.1;
 

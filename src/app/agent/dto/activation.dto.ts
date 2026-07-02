@@ -3,7 +3,8 @@ import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-v
 
 export enum ActivationStatus {
   APPROVED = 'approved',
-  REJECTED = 'rejected',
+  FLAGGED = 'flagged',
+  FOLLOW_UP = 'follow_up',
 }
 
 export class ActivationPaymentDto {
