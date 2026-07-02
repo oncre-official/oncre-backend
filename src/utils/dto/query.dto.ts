@@ -10,8 +10,8 @@ export class QueryDto extends PaginationDto {
   search?: string;
 
   @ApiPropertyOptional()
-  startDate?: string;
+  start_date?: Date;
 
   @ApiPropertyOptional()
-  endDate?: string;
+  end_date?: Date;
 }

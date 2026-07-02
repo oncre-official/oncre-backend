@@ -1,7 +1,7 @@
-import { ObjectId } from 'mongodb';
+import { ClientSession, ObjectId } from 'mongodb';
 import { Model, PopulateOptions, UpdateResult } from 'mongoose';
 
-import { normalizeMongoIds } from '@on/helpers/db';
+import { hasNestedPopulate, normalizeMongoIds } from '@on/helpers/db';
 
 export interface AggregateOption {
   limit?: number;
@@ -21,6 +21,8 @@ interface Options {
   upsert?: boolean;
   lean?: boolean;
   returnDocument?: 'after' | 'before';
+  session?: ClientSession;
+  useLookup?: boolean;
 }
 
 export class BaseRepository<T> {
@@ -142,15 +144,62 @@ export class BaseRepository<T> {
     const skip = Number(options?.aggregate?.skip || 0);
     const limit = Number(options?.aggregate?.limit || 0);
 
-    const countResult = await this.repository.aggregate([...pipeline, { $count: 'count' }]).exec();
+    const sort = options?.sort || {};
+
+    const session = options?.session;
+    const populate = options?.populate;
+    const useLookup = options?.useLookup ?? false;
+
+    const fullPipeline = [...pipeline];
+
+    if (populate && useLookup) {
+      const lookups: any = Array.isArray(populate) ? populate : [populate];
+
+      for (const pop of lookups) {
+        if (pop.populate) continue;
+
+        const lookupStage = {
+          $lookup: {
+            from: pop.from || pop.path,
+            localField: pop.localField || pop.path,
+            foreignField: pop.foreignField || '_id',
+            as: pop.as || pop.path,
+          },
+        };
+
+        fullPipeline.push(lookupStage);
+
+        if (pop.unwind !== false) {
+          fullPipeline.push({
+            $unwind: { path: `$${pop.as || pop.path}`, preserveNullAndEmptyArrays: true },
+          });
+        }
+      }
+    }
+
+    const countPipeline = [...fullPipeline, { $count: 'count' }];
+    let countAggregate = this.repository.aggregate(countPipeline);
+    if (session) countAggregate = countAggregate.session(session);
+
+    const countResult = await countAggregate.exec();
     const count = countResult[0]?.count || 0;
 
-    const dataPipeline = [...pipeline];
+    const dataPipeline = [...fullPipeline];
 
+    if (sort && Object.keys(sort).length > 0) dataPipeline.push({ $sort: sort });
     if (skip) dataPipeline.push({ $skip: skip });
     if (limit) dataPipeline.push({ $limit: limit });
 
-    const data = await this.repository.aggregate(dataPipeline).exec();
+    let dataAggregate = this.repository.aggregate(dataPipeline);
+    if (session) dataAggregate = dataAggregate.session(session);
+
+    let data = await dataAggregate.exec();
+
+    if (populate && data.length > 0) {
+      if (!useLookup || hasNestedPopulate(populate)) {
+        data = await this.repository.populate(data, populate);
+      }
+    }
 
     return { row: data, count };
   }

@@ -11,6 +11,7 @@ export interface IMerchant extends IBaseType {
   merchant_phone: string;
   location: string;
   activated: boolean;
+  channel: string;
 }
 
 export interface ICreateMerchant {

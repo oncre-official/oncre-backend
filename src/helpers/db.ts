@@ -41,3 +41,11 @@ const normalizeAggregationValue = (value: any): any => {
 export const normalizeAggregationPipeline = (pipeline: any[]) => {
   return pipeline.map((stage) => normalizeAggregationValue(stage));
 };
+
+export function hasNestedPopulate(populate: any): boolean {
+  if (Array.isArray(populate)) {
+    return populate.some((p) => p.populate);
+  }
+
+  return !!populate.populate;
+}

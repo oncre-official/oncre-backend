@@ -1,17 +1,21 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 
+import { calculateStartAndEndOfDay } from '@on/helpers/date';
+import { joinSearchQuery } from '@on/helpers/search';
 import { ServiceResponse } from '@on/utils/types';
 
 import { MerchantRepository } from '../merchant/repository/merchant.repository';
 import { Payment } from '../payment/model/payment.model';
 import { PaymentRepository } from '../payment/repository/payment.repository';
 import { MerchantPaymentStatus, PaymentType } from '../payment/types/payment.interface';
+import { RoleRepository } from '../role/repository/role.repository';
 import { SharedService } from '../shared/shared.service';
 import { User } from '../user/model/user.model';
 import { UserRepository } from '../user/repository/user.repository';
 
 import { ActivationPaymentDto, ActivationStatus, ConfirmActivationPaymentDto } from './dto/activation.dto';
 import { CommissionPayoutDto } from './dto/payout.dto';
+import { QueryAgentDto, QueryCommissionDto } from './dto/query.dto';
 import { CommissionPayout } from './model/commission-payout.model';
 import { CommissionPayoutRepository } from './repository/commission-payout.repository';
 import { WalletTransactionRepository } from './repository/wallet-transaction.repository';
@@ -22,6 +26,7 @@ import { ICreditDebitWallet, IWallet, WalletTransactionType } from './types/wall
 @Injectable()
 export class AgentService {
   constructor(
+    private readonly role: RoleRepository,
     private readonly user: UserRepository,
     private readonly shared: SharedService,
     private readonly wallet: WalletRepository,
@@ -30,6 +35,126 @@ export class AgentService {
     private readonly payout: CommissionPayoutRepository,
     private readonly transaction: WalletTransactionRepository,
   ) {}
+
+  async find(query: QueryAgentDto, skip: number = 0, limit: number = 20): Promise<ServiceResponse<any>> {
+    const { search } = query;
+
+    const role = await this.role.findOne({ name: 'field-agent' });
+    if (!role) throw new NotFoundException('Agent role not found');
+
+    const filter = { ...query, role_id: role._id };
+
+    const joinQuery = joinSearchQuery({
+      search,
+      fields: [],
+      query: filter,
+      joins: [],
+    });
+
+    const strategies = {
+      search: () => this.user.aggregateAndCount(joinQuery, { aggregate: { skip, limit } }),
+      normal: () =>
+        this.user.findAndCount(filter, {
+          aggregate: { skip, limit },
+          populate: [],
+          sort: { createdAt: -1 },
+        }),
+    };
+
+    const data = search ? await strategies.search() : await strategies.normal();
+
+    return { data, message: 'Agent successfully fetched' };
+  }
+
+  async commissionSummary(
+    query: QueryCommissionDto,
+    skip: number = 0,
+    limit: number = 20,
+  ): Promise<ServiceResponse<any>> {
+    const { search, user_id, start_date, end_date } = query;
+
+    const role = await this.role.findOne({ name: 'field-agent' });
+    if (!role) throw new NotFoundException('Agent role not found');
+
+    const filter: any = { role_id: role._id };
+    if (user_id) filter._id = user_id;
+
+    const joinQuery = joinSearchQuery({
+      search,
+      fields: ['first_name', 'last_name', 'email', 'phone'],
+      query: filter,
+      joins: [],
+    });
+
+    const populate = [{ path: 'agent' }];
+
+    const strategies = {
+      search: () =>
+        this.user.aggregateAndCount(joinQuery, { aggregate: { skip, limit }, populate, sort: { createdAt: -1 } }),
+      normal: () =>
+        this.user.findAndCount(filter, {
+          aggregate: { skip, limit },
+          populate,
+          sort: { createdAt: -1 },
+        }),
+    };
+
+    const users = search ? await strategies.search() : await strategies.normal();
+
+    const { start, end } = calculateStartAndEndOfDay(start_date, end_date);
+
+    const data = await Promise.all(
+      users.row.map(async (user) => {
+        const wallet = await this.wallet.findOne({ user_id: user._id });
+
+        const merchants = await this.merchant.find({
+          created_by: user._id,
+          createdAt: { $gte: start, $lte: end },
+        });
+
+        const merchantIds = merchants.map((x) => x.merchant_id);
+        const payments = merchantIds.length ? await this.payment.find({ merchant_id: { $in: merchantIds } }) : [];
+
+        const confirmedPayments = payments.filter(
+          (payment) => payment.merchant_status === MerchantPaymentStatus.CONFIRMED,
+        );
+
+        const pendingPayments = payments.filter((payment) => payment.merchant_status === MerchantPaymentStatus.PENDING);
+
+        const confirmedCommission = confirmedPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
+        const pendingCommission = pendingPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
+
+        return {
+          ...user.toObject(),
+          total_activations: payments.length,
+          confirmed_activations: confirmedPayments.length,
+          pending_verification: pendingPayments.length,
+          confirmed_commission: confirmedCommission * 0.1,
+          pending_commission: pendingCommission * 0.1,
+          total_due: wallet?.balance || 0,
+          total_paid: wallet?.total_debit || 0,
+        };
+      }),
+    );
+
+    const supervisorConfirmed = data.reduce((sum, row) => sum + row.confirmed_activations, 0);
+
+    return {
+      data: {
+        data,
+        count: users.count,
+        supervisor: {
+          confirmed_activations: supervisorConfirmed,
+          commission: supervisorConfirmed * 1500,
+        },
+        week: {
+          start_date: start_date,
+          end_date: end_date,
+        },
+      },
+      message: 'Commission summary fetched successfully.',
+    };
+  }
 
   async activationFee(user: User, payload: ActivationPaymentDto): Promise<ServiceResponse<Payment>> {
     const { merchant_id, amount, receipt_url, reference } = payload;

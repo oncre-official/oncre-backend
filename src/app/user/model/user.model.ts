@@ -3,6 +3,7 @@ import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
 import { ObjectId } from 'mongodb';
 import { Document, HydratedDocument, Types } from 'mongoose';
 
+import { Agent } from '@on/app/agent/model/agent.model';
 import { Role } from '@on/app/role/model/role.model';
 import { UserStatus } from '@on/enum';
 
@@ -70,6 +71,9 @@ export class User extends Document implements IUser {
    */
   @ApiHideProperty()
   role: Role;
+
+  @ApiHideProperty()
+  agent: Agent;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
@@ -84,5 +88,12 @@ UserSchema.virtual('role', {
   ref: 'Role',
   localField: 'role_id',
   foreignField: '_id',
+  justOne: true,
+});
+
+UserSchema.virtual('agent', {
+  ref: 'Agent',
+  localField: '_id',
+  foreignField: 'user_id',
   justOne: true,
 });

@@ -68,7 +68,6 @@ export const roles = [
     name: 'merchant',
     permissions: ['manage-products', 'manage-orders'],
   },
-
   {
     name: 'customer',
     permissions: [],
