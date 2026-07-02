@@ -8,6 +8,12 @@ export enum PaymentType {
   ACTIVATION = 'ACTIVATION',
 }
 
+export enum PaymentAuditAction {
+  APPROVED = 'APPROVED',
+  FLAGGED = 'FLAGGED',
+  FOLLOW_UP = 'FOLLOW_UP',
+}
+
 export enum MerchantPaymentStatus {
   PENDING = 'pending',
   CONFIRMED = 'confirmed',
@@ -33,4 +39,18 @@ export interface IPayment extends IBaseType {
   rejection_reason: string;
   confirmed_at: Date;
   paid_at: Date;
+}
+
+export interface IPaymentAudit extends IBaseType {
+  payment_id: string;
+  merchant_id: string;
+  type: PaymentType;
+  admin_id: ObjectId;
+  user_id: ObjectId;
+  action: PaymentAuditAction;
+  previous_status: MerchantPaymentStatus;
+  new_status: MerchantPaymentStatus;
+  reason: string;
+  note: string;
+  meta: Record<string, any>;
 }

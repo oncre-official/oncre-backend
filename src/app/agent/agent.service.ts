@@ -11,8 +11,9 @@ import { ServiceResponse } from '@on/utils/types';
 import { Merchant } from '../merchant/model/merchant.model';
 import { MerchantRepository } from '../merchant/repository/merchant.repository';
 import { Payment } from '../payment/model/payment.model';
+import { PaymentAuditRepository } from '../payment/repository/payment-audit.repository';
 import { PaymentRepository } from '../payment/repository/payment.repository';
-import { MerchantPaymentStatus, PaymentType } from '../payment/types/payment.interface';
+import { MerchantPaymentStatus, PaymentAuditAction, PaymentType } from '../payment/types/payment.interface';
 import { RoleRepository } from '../role/repository/role.repository';
 import { SharedService } from '../shared/shared.service';
 import { User } from '../user/model/user.model';
@@ -38,6 +39,7 @@ export class AgentService {
     private readonly wallet: WalletRepository,
     private readonly payment: PaymentRepository,
     private readonly merchant: MerchantRepository,
+    private readonly audit: PaymentAuditRepository,
     private readonly payout: CommissionPayoutRepository,
     private readonly transaction: WalletTransactionRepository,
   ) {}
@@ -211,6 +213,8 @@ export class AgentService {
     if (!payment) throw new NotFoundException('Merchant payment not found');
     if (payment.merchant_status !== MerchantPaymentStatus.PENDING)
       throw new BadRequestException('Payment has already been processed.');
+    if (!payment.receipt_url)
+      throw new BadRequestException('Payment receipt is missing. Please upload a valid receipt before confirming.');
 
     const merchant = await this.merchant.findOne({ merchant_id: payment.merchant_id });
     if (!merchant) throw new NotFoundException('Merchant not found.');
@@ -229,6 +233,18 @@ export class AgentService {
             confirmed_at: new Date(),
           });
 
+          await this.audit.create({
+            payment_id,
+            merchant_id: merchant.merchant_id,
+            type: PaymentType.ACTIVATION,
+            admin_id: admin._id,
+            user_id: agent._id,
+            action: PaymentAuditAction.FLAGGED,
+            previous_status: MerchantPaymentStatus.PENDING,
+            new_status: MerchantPaymentStatus.FLAGGED,
+            reason: rejection_reason,
+          });
+
           result = {
             data: payment,
             message: 'Merchant payment flagged successfully.',
@@ -244,6 +260,18 @@ export class AgentService {
             rejection_reason,
             confirmed_by: admin._id,
             confirmed_at: new Date(),
+          });
+
+          await this.audit.create({
+            payment_id,
+            merchant_id: merchant.merchant_id,
+            type: PaymentType.ACTIVATION,
+            admin_id: admin._id,
+            user_id: agent._id,
+            action: PaymentAuditAction.FOLLOW_UP,
+            previous_status: MerchantPaymentStatus.PENDING,
+            new_status: MerchantPaymentStatus.FOLLOW_UP,
+            reason: rejection_reason,
           });
 
           result = {
@@ -264,6 +292,17 @@ export class AgentService {
         });
 
         await Promise.all([
+          this.audit.create({
+            payment_id,
+            merchant_id: merchant.merchant_id,
+            type: PaymentType.ACTIVATION,
+            admin_id: admin._id,
+            user_id: agent._id,
+            action: PaymentAuditAction.APPROVED,
+            previous_status: MerchantPaymentStatus.PENDING,
+            new_status: MerchantPaymentStatus.CONFIRMED,
+            reason: 'Merchant activation payment approved',
+          }),
           this.credit({
             user_id: agent._id,
             amount: commission,
