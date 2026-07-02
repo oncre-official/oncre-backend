@@ -49,7 +49,7 @@ export class MerchantService {
         this.merchant.findAndCount(query, {
           aggregate: { skip, limit },
           populate: [{ path: 'user' }],
-          sort: { createdAt: -1 },
+          sort: { created_at: -1 },
         }),
     };
 

@@ -35,7 +35,7 @@ export class MessageService {
         this.message.findAndCount(query, {
           aggregate: { skip, limit },
           populate: [{ path: 'repayments' }, { path: 'customer' }],
-          sort: { createdAt: -1 },
+          sort: { created_at: -1 },
         }),
     };
 

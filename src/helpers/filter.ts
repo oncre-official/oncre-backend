@@ -9,7 +9,7 @@ export interface RequestFilterOptions {
 export function requestFilter(data: Record<string, any>, options: RequestFilterOptions = {}) {
   if (!data) return data;
 
-  const { dateField = 'createdAt', convertToRegex = true } = options;
+  const { dateField = 'created_at', convertToRegex = true } = options;
 
   delete data.skip;
   delete data.limit;
@@ -31,7 +31,7 @@ export function requestFilter(data: Record<string, any>, options: RequestFilterO
   });
 
   if (startDate || endDate) {
-    filter.createdAt = {};
+    filter.created_at = {};
 
     const { start, end } = calculateStartAndEndOfDay(startDate, endDate);
 

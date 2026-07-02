@@ -28,7 +28,7 @@ export class AdminService {
     const data = await this.user.findAndCount(query, {
       aggregate: { skip, limit },
       populate: [{ path: 'role' }],
-      sort: { createdAt: -1 },
+      sort: { created_at: -1 },
     });
 
     return { data, message: `User successfully fetched` };

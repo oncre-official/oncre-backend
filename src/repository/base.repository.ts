@@ -268,7 +268,7 @@ export class BaseRepository<T> {
 
     if (populateOptions) queryBuilder = queryBuilder.populate(populateOptions);
 
-    const defaultSortField = 'createdAt';
+    const defaultSortField = 'created_at';
     const defaultSortDirection = -1;
     const finalSortOptions = sortOptions || { [defaultSortField]: defaultSortDirection };
 

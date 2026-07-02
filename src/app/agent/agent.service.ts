@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 
-import { UserStatus } from '@on/enum';
+import { PaymentStatus, UserStatus } from '@on/enum';
 import { normalizePhoneNumber } from '@on/helpers';
 import { calculateStartAndEndOfDay } from '@on/helpers/date';
 import { generatePassword } from '@on/helpers/password';
@@ -26,7 +26,7 @@ import { CommissionPayoutRepository } from './repository/commission-payout.repos
 import { WalletTransactionRepository } from './repository/wallet-transaction.repository';
 import { WalletRepository } from './repository/wallet.repository';
 import { CommissionPayoutStatus } from './types/commission.interface';
-import { ICreditDebitWallet, IWallet, WalletTransactionType } from './types/wallet.interface';
+import { ICreditDebitWallet, IWallet, WalletTransactionReason, WalletTransactionType } from './types/wallet.interface';
 
 @Injectable()
 export class AgentService {
@@ -63,7 +63,7 @@ export class AgentService {
         this.user.findAndCount(filter, {
           aggregate: { skip, limit },
           populate: [],
-          sort: { createdAt: -1 },
+          sort: { created_at: -1 },
         }),
     };
 
@@ -96,12 +96,12 @@ export class AgentService {
 
     const strategies = {
       search: () =>
-        this.user.aggregateAndCount(joinQuery, { aggregate: { skip, limit }, populate, sort: { createdAt: -1 } }),
+        this.user.aggregateAndCount(joinQuery, { aggregate: { skip, limit }, populate, sort: { created_at: -1 } }),
       normal: () =>
         this.user.findAndCount(filter, {
           aggregate: { skip, limit },
           populate,
-          sort: { createdAt: -1 },
+          sort: { created_at: -1 },
         }),
     };
 
@@ -115,11 +115,13 @@ export class AgentService {
 
         const merchants = await this.merchant.find({
           created_by: user._id,
-          createdAt: { $gte: start, $lte: end },
+          created_at: { $gte: start, $lte: end },
         });
 
         const merchantIds = merchants.map((x) => x.merchant_id);
         const payments = merchantIds.length ? await this.payment.find({ merchant_id: { $in: merchantIds } }) : [];
+
+        console.log(payments);
 
         const confirmedPayments = payments.filter(
           (payment) => payment.merchant_status === MerchantPaymentStatus.CONFIRMED,
@@ -224,7 +226,8 @@ export class AgentService {
       case ActivationStatus.REJECTED:
         {
           await payment.updateOne({
-            status: MerchantPaymentStatus.REJECTED,
+            status: PaymentStatus.UNPAID,
+            merchant_status: MerchantPaymentStatus.REJECTED,
             rejection_reason,
             confirmed_by: admin._id,
             confirmed_at: new Date(),
@@ -240,7 +243,8 @@ export class AgentService {
         const commission = payment.amount * 0.1;
 
         await payment.updateOne({
-          status: MerchantPaymentStatus.CONFIRMED,
+          status: PaymentStatus.PAID,
+          merchant_status: MerchantPaymentStatus.CONFIRMED,
           confirmed_by: admin._id,
           confirmed_at: new Date(),
         });
@@ -249,7 +253,7 @@ export class AgentService {
           this.credit({
             user_id: agent._id,
             amount: commission,
-            reason: 'Merchant activation',
+            reason: WalletTransactionReason.MERCHANT_ACTIVATION,
             merchant_id: merchant.merchant_id,
             payment_id,
             created_by: admin._id,
@@ -298,7 +302,7 @@ export class AgentService {
     await this.debit({
       user_id,
       amount,
-      reason: 'Commission payout',
+      reason: WalletTransactionReason.COMMISSION_PAYOUT,
       created_by: admin._id,
       note: `Commission for payout ${payoutId}`,
     });

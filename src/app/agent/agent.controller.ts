@@ -132,7 +132,7 @@ export class AgentController {
   @Roles('admin', 'super-admin')
   @UseGuards(JwtAuthGuard, RoleGuard)
   @Post('/commission-payout')
-  async create(
+  async commissionPayout(
     @Body() payload: CommissionPayoutDto,
     @User() user: UserDocument,
     @Res() res: Response,
