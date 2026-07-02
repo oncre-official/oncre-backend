@@ -4,7 +4,6 @@ import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags, ApiUnprocessableEn
 import { Roles } from '@on/decorators/roles.decorator';
 import { ErrorResponse, JsonResponse } from '@on/handlers/responses';
 import { requestFilter } from '@on/helpers/filter';
-import { QueryDto } from '@on/utils/dto/query.dto';
 import { ApiResponseDTO } from '@on/utils/dto/response.dto';
 import { ResponseDTO } from '@on/utils/types';
 
@@ -13,6 +12,7 @@ import { RoleGuard } from '../auth/guard/role.guard';
 
 import { AdminService } from './admin.service';
 import { AdminCreateUserDto, AdminUpdateUserDto } from './dto/create-user.dto';
+import { QueryUserDto } from './dto/query.dto';
 
 import type { Response, Request } from 'express';
 
@@ -34,7 +34,7 @@ export class AdminController {
   @ApiOkResponse({ description: 'Get users successful ', type: ApiResponseDTO })
   @UseGuards(JwtAuthGuard)
   @Get('users')
-  async findUser(@Query() query: QueryDto, @Res() res: Response, @Req() req: Request): Promise<ResponseDTO> {
+  async findUser(@Query() query: QueryUserDto, @Res() res: Response, @Req() req: Request): Promise<ResponseDTO> {
     try {
       const { skip, limit } = query;
 

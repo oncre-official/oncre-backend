@@ -2,7 +2,6 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 
 import { generatePassword } from '@on/helpers/password';
 import { buildUserLookupQueryFromPayload } from '@on/helpers/user';
-import { QueryDto } from '@on/utils/dto/query.dto';
 import { ServiceResponse } from '@on/utils/types';
 
 import { AgentRepository } from '../agent/repository/agent.repository';
@@ -11,6 +10,7 @@ import { User } from '../user/model/user.model';
 import { UserRepository } from '../user/repository/user.repository';
 
 import { AdminCreateUserDto, AdminUpdateUserDto } from './dto/create-user.dto';
+import { QueryUserDto } from './dto/query.dto';
 
 @Injectable()
 export class AdminService {
@@ -24,10 +24,10 @@ export class AdminService {
    * USER SECTION
    */
 
-  async findUser(query: QueryDto, skip: number = 0, limit: number = 20): Promise<ServiceResponse<any>> {
+  async findUser(query: QueryUserDto, skip: number = 0, limit: number = 20): Promise<ServiceResponse<any>> {
     const data = await this.user.findAndCount(query, {
       aggregate: { skip, limit },
-      populate: [{ path: 'roles' }],
+      populate: [{ path: 'role' }],
       sort: { createdAt: -1 },
     });
 
