@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 
+import { TermiiService } from '@on/services/termii/service';
+
 import { MerchantModule } from '../merchant/merchant.module';
 import { PaymentModule } from '../payment/payment.module';
 import { RoleModule } from '../role/role.module';
@@ -33,7 +35,21 @@ import { WalletRepository } from './repository/wallet.repository';
     MerchantModule,
   ],
   controllers: [AgentController],
-  providers: [AgentService, WalletRepository, WalletTransactionRepository, CommissionPayoutRepository, AgentRepository],
-  exports: [AgentService, WalletRepository, WalletTransactionRepository, CommissionPayoutRepository, AgentRepository],
+  providers: [
+    AgentService,
+    WalletRepository,
+    WalletTransactionRepository,
+    CommissionPayoutRepository,
+    AgentRepository,
+    TermiiService,
+  ],
+  exports: [
+    AgentService,
+    WalletRepository,
+    WalletTransactionRepository,
+    CommissionPayoutRepository,
+    AgentRepository,
+    TermiiService,
+  ],
 })
 export class AgentModule {}

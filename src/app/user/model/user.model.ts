@@ -39,7 +39,7 @@ export class User extends Document implements IUser {
   role_id: ObjectId;
 
   @ApiProperty()
-  @Prop({ type: String, required: true })
+  @Prop({ type: String, required: false })
   password: string;
 
   @ApiProperty()

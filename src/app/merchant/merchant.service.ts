@@ -1,7 +1,6 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 
 import { UserStatus } from '@on/enum';
-import { generatePassword } from '@on/helpers/password';
 import { formatPhoneWithCode, parsePhone } from '@on/helpers/phone';
 import { joinSearchQuery } from '@on/helpers/search';
 import { buildUserLookupQuery } from '@on/helpers/user';
@@ -68,13 +67,14 @@ export class MerchantService {
     const role = await this.role.findOne({ name: 'merchant' });
     if (!role) throw new NotFoundException('Merchant role not found');
 
+    const creatorRole = await this.role.findById(creator.role_id);
+    if (!creatorRole) throw new NotFoundException('Creator role not found');
+
     const merchantExist = await this.merchant.findOne({ $or: [{ merchant_name }, { merchant_phone }] });
     if (merchantExist) throw new ConflictException('Merchant already exists');
 
     const userLookup = buildUserLookupQuery(merchant_phone);
     const conditions = [userLookup];
-
-    const [password, hashedPassword] = await generatePassword();
 
     let user = await this.user.findOne({ $or: conditions });
     if (!user) {
@@ -82,11 +82,10 @@ export class MerchantService {
         country_code: code,
         phone: phone,
         role_id: role.id,
-        password: hashedPassword,
         password_changed: false,
         phone_verified: true,
         email_verified: true,
-        status: UserStatus.ACTIVE,
+        status: UserStatus.INACTIVE,
       });
     }
 
@@ -97,11 +96,12 @@ export class MerchantService {
       merchant_id: merchantId,
       user_id: user._id,
       created_by: creator._id,
+      channel: creatorRole.name,
     };
 
     const merchant = await this.merchant.create(merchantPayload);
 
-    const data = { ...merchant.toObject(), password };
+    const data = { ...merchant.toObject() };
 
     return { data, message: `Merchant successfully created` };
   }

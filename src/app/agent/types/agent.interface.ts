@@ -1,5 +1,6 @@
 import { ObjectId } from 'mongodb';
 
+import { UserStatus } from '@on/enum';
 import { IBaseType } from '@on/utils/types';
 
 export interface IAgent extends IBaseType {
@@ -8,5 +9,5 @@ export interface IAgent extends IBaseType {
   first_name: string;
   last_name: string;
   zone: string;
-  status: string;
+  status: UserStatus;
 }

@@ -44,7 +44,7 @@ export class Merchant extends Document implements IMerchant {
   @Prop({ required: false })
   location: string;
 
-  @ApiProperty({ description: 'Channel through which the merchant was acquired', example: 'Online' })
+  @ApiProperty({ description: 'Channel through which the merchant was acquired', example: 'Admin' })
   @Prop({ required: false })
   channel: string;
 

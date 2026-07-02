@@ -3,6 +3,8 @@ import { ApiProperty } from '@nestjs/swagger';
 import { ObjectId } from 'mongodb';
 import { Document, HydratedDocument, Types } from 'mongoose';
 
+import { UserStatus } from '@on/enum';
+
 import { IAgent } from '../types/agent.interface';
 
 export type AgentDocument = HydratedDocument<Agent>;
@@ -37,8 +39,8 @@ export class Agent extends Document implements IAgent {
   zone: string;
 
   @ApiProperty({ description: 'Indicates whether the agent is activated', example: true })
-  @Prop({ required: true, default: false })
-  status: string;
+  @Prop({ enum: UserStatus, required: true, default: UserStatus.ACTIVE })
+  status: UserStatus;
 }
 
 export const AgentSchema = SchemaFactory.createForClass(Agent);

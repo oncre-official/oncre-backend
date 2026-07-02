@@ -1,9 +1,14 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 
+import { UserStatus } from '@on/enum';
+import { normalizePhoneNumber } from '@on/helpers';
 import { calculateStartAndEndOfDay } from '@on/helpers/date';
+import { generatePassword } from '@on/helpers/password';
 import { joinSearchQuery } from '@on/helpers/search';
+import { TermiiService } from '@on/services/termii/service';
 import { ServiceResponse } from '@on/utils/types';
 
+import { Merchant } from '../merchant/model/merchant.model';
 import { MerchantRepository } from '../merchant/repository/merchant.repository';
 import { Payment } from '../payment/model/payment.model';
 import { PaymentRepository } from '../payment/repository/payment.repository';
@@ -28,6 +33,7 @@ export class AgentService {
   constructor(
     private readonly role: RoleRepository,
     private readonly user: UserRepository,
+    private readonly termii: TermiiService,
     private readonly shared: SharedService,
     private readonly wallet: WalletRepository,
     private readonly payment: PaymentRepository,
@@ -239,17 +245,20 @@ export class AgentService {
           confirmed_at: new Date(),
         });
 
-        await this.credit({
-          user_id: agent._id,
-          amount: commission,
-          reason: 'Merchant activation',
-          merchant_id: merchant.merchant_id,
-          payment_id,
-          created_by: admin._id,
-          note: `Commission for merchant ${merchant.merchant_name}`,
-        });
-
-        await merchant.updateOne({ activated: true });
+        await Promise.all([
+          this.credit({
+            user_id: agent._id,
+            amount: commission,
+            reason: 'Merchant activation',
+            merchant_id: merchant.merchant_id,
+            payment_id,
+            created_by: admin._id,
+            note: `Commission for merchant ${merchant.merchant_name}`,
+          }),
+          merchant.updateOne({ activated: true }),
+          this.user.updateOne({ _id: merchant.user_id }, { status: UserStatus.ACTIVE }),
+          this.sendActivationSMS(merchant),
+        ]);
 
         result = {
           data: payment,
@@ -301,7 +310,7 @@ export class AgentService {
    * PRIVATE METHODS
    */
 
-  async credit(payload: ICreditDebitWallet): Promise<IWallet> {
+  private async credit(payload: ICreditDebitWallet): Promise<IWallet> {
     const { user_id, amount, reason, merchant_id, payment_id, created_by, note } = payload;
 
     if (amount <= 0) throw new BadRequestException('Credit amount must be greater than zero');
@@ -338,7 +347,7 @@ export class AgentService {
     return wallet;
   }
 
-  async debit(payload: ICreditDebitWallet): Promise<IWallet> {
+  private async debit(payload: ICreditDebitWallet): Promise<IWallet> {
     const { user_id, amount, reason, merchant_id, payment_id, created_by, note } = payload;
 
     if (amount <= 0) throw new BadRequestException('Debit amount must be greater than zero');
@@ -377,5 +386,17 @@ export class AgentService {
     });
 
     return wallet;
+  }
+
+  private async sendActivationSMS(merchant: Merchant): Promise<void> {
+    const [password, hashedPassword] = await generatePassword();
+
+    const user = await this.user.updateOne({ _id: merchant.user_id }, { password: hashedPassword });
+
+    const message = `Your merchant account has been activated. Your login credentials are:\n\nPhone: ${user?.phone}\nPassword: ${password}\n\nPlease change your password after logging in.`;
+
+    const to = normalizePhoneNumber(user?.phone || merchant.merchant_phone || '');
+
+    await this.termii.sendSMS(to, message);
   }
 }
