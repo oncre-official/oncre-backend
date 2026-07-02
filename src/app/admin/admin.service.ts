@@ -5,6 +5,7 @@ import { buildUserLookupQueryFromPayload } from '@on/helpers/user';
 import { QueryDto } from '@on/utils/dto/query.dto';
 import { ServiceResponse } from '@on/utils/types';
 
+import { AgentRepository } from '../agent/repository/agent.repository';
 import { RoleRepository } from '../role/repository/role.repository';
 import { User } from '../user/model/user.model';
 import { UserRepository } from '../user/repository/user.repository';
@@ -16,6 +17,7 @@ export class AdminService {
   constructor(
     private readonly user: UserRepository,
     private readonly role: RoleRepository,
+    private readonly agent: AgentRepository,
   ) {}
 
   /**
@@ -52,6 +54,13 @@ export class AdminService {
       phone_verified: true,
       email_verified: true,
     });
+
+    if (role.name === 'field-agent') {
+      await this.agent.create({
+        ...payload,
+        user_id: user._id,
+      });
+    }
 
     const data = { ...user.toObject(), password };
 

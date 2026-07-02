@@ -1,7 +1,24 @@
 import { ApiHideProperty, ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import { IsEmail, IsMongoId, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
-export class AdminCreateUserDto {
+export class AgentUserDto {
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  first_name: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  last_name: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  zone: string;
+}
+
+export class AdminCreateUserDto extends AgentUserDto {
   @ApiProperty()
   @IsOptional()
   @IsString()
