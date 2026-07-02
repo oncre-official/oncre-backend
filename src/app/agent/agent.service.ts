@@ -121,14 +121,10 @@ export class AgentService {
         const merchantIds = merchants.map((x) => x.merchant_id);
         const payments = merchantIds.length ? await this.payment.find({ merchant_id: { $in: merchantIds } }) : [];
 
-        console.log(payments);
-
         const confirmedPayments = payments.filter(
           (payment) => payment.merchant_status === MerchantPaymentStatus.CONFIRMED,
         );
-
         const pendingPayments = payments.filter((payment) => payment.merchant_status === MerchantPaymentStatus.PENDING);
-
         const confirmedCommission = confirmedPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
         const pendingCommission = pendingPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
 
