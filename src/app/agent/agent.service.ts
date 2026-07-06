@@ -1,10 +1,12 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import * as ExcelJS from 'exceljs';
 
 import { PaymentStatus, UserStatus } from '@on/enum';
 import { normalizePhoneNumber } from '@on/helpers';
 import { calculateStartAndEndOfDay } from '@on/helpers/date';
 import { generatePassword } from '@on/helpers/password';
 import { joinSearchQuery } from '@on/helpers/search';
+import { saveTempFile } from '@on/helpers/temp';
 import { TermiiService } from '@on/services/termii/service';
 import { ServiceResponse } from '@on/utils/types';
 
@@ -22,6 +24,7 @@ import { UserRepository } from '../user/repository/user.repository';
 import { ActivationPaymentDto, ActivationStatus, ConfirmActivationPaymentDto } from './dto/activation.dto';
 import { CommissionPayoutDto } from './dto/payout.dto';
 import { QueryAgentDto, QueryCommissionDto } from './dto/query.dto';
+import { buildSummaryWorksheet } from './helpers/exports';
 import { CommissionPayout } from './model/commission-payout.model';
 import { CommissionPayoutRepository } from './repository/commission-payout.repository';
 import { WalletTransactionRepository } from './repository/wallet-transaction.repository';
@@ -89,9 +92,17 @@ export class AgentService {
 
     const joinQuery = joinSearchQuery({
       search,
-      fields: ['first_name', 'last_name', 'email', 'phone'],
+      fields: ['email', 'phone'],
       query: filter,
-      joins: [],
+      joins: [
+        {
+          from: 'agents',
+          localField: '_id',
+          foreignField: 'user_id',
+          as: 'agent',
+          searchFields: ['first_name', 'last_name'],
+        },
+      ],
     });
 
     const populate = [{ path: 'agent' }];
@@ -130,8 +141,10 @@ export class AgentService {
         const confirmedCommission = confirmedPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
         const pendingCommission = pendingPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0);
 
+        const userData = user.toObject ? user.toObject() : user;
+
         return {
-          ...user.toObject(),
+          ...userData,
           total_activations: payments.length,
           confirmed_activations: confirmedPayments.length,
           pending_verification: pendingPayments.length,
@@ -160,6 +173,33 @@ export class AgentService {
       },
       message: 'Commission summary fetched successfully.',
     };
+  }
+
+  async exportCommissionSummary(query: QueryCommissionDto): Promise<any> {
+    const response = await this.commissionSummary(query, 0, Number.MAX_SAFE_INTEGER);
+    const rows = response.data.data;
+
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('Commission Summary');
+
+    const worksheet = buildSummaryWorksheet(sheet);
+
+    rows.forEach((row) => {
+      worksheet.addRow({
+        agent_name: row.agent ? `${row.agent.first_name} ${row.agent.last_name}` : '',
+        email: row.email,
+        phone: row.phone,
+        confirmed_activations: row.confirmed_activations,
+        pending_verification: row.pending_verification,
+        total_activations: row.total_activations,
+        confirmed_commission: row.confirmed_commission,
+        pending_commission: row.pending_commission,
+        total_due: row.total_due,
+        total_paid: row.total_paid,
+      });
+    });
+
+    return await saveTempFile(workbook, 'Summary-Comission');
   }
 
   async activationFee(user: User, payload: ActivationPaymentDto): Promise<ServiceResponse<Payment>> {

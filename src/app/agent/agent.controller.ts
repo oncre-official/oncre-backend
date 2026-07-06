@@ -14,7 +14,7 @@ import { RoleGuard } from '../auth/guard/role.guard';
 import { AgentService } from './agent.service';
 import { ActivationPaymentDto, ConfirmActivationPaymentDto } from './dto/activation.dto';
 import { CommissionPayoutDto } from './dto/payout.dto';
-import { QueryAgentDto, QueryCommissionDto } from './dto/query.dto';
+import { ExportCommissionDto, QueryAgentDto, QueryCommissionDto } from './dto/query.dto';
 
 import type { UserDocument } from '../user/model/user.model';
 import type { Response, Request } from 'express';
@@ -70,6 +70,27 @@ export class AgentController {
       const response = await this.agentService.commissionSummary(filter, skip, limit);
 
       return JsonResponse(res, response);
+    } catch (error) {
+      return ErrorResponse(res, error, req);
+    }
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Export agents commission payout',
+    description: 'Allows admin export agent commission payouts',
+  })
+  @ApiOkResponse({ description: 'Export agent commission payouts successful ', type: ApiResponseDTO })
+  @Roles('admin', 'super-admin')
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Get('/commission/summary/export')
+  async exportCommissionPayouts(@Query() query: ExportCommissionDto, @Res() res: Response, @Req() req: Request) {
+    try {
+      const filter = requestFilter(query, { convertToRegex: false });
+
+      const response = await this.agentService.exportCommissionSummary(filter);
+
+      return res.sendFile(`${response}`);
     } catch (error) {
       return ErrorResponse(res, error, req);
     }

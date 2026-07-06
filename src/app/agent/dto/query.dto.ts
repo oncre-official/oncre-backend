@@ -14,3 +14,8 @@ export class QueryCommissionDto extends QueryDto {
   @ApiPropertyOptional()
   user_id?: string;
 }
+
+export class ExportCommissionDto {
+  @ApiPropertyOptional()
+  user_id?: string;
+}
