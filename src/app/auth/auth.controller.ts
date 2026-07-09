@@ -6,7 +6,7 @@ import { ApiResponseDTO } from '@on/utils/dto/response.dto';
 import { ResponseDTO } from '@on/utils/types';
 
 import { AuthService } from './auth.service';
-import { LoginDto, ResetPasswordDto, SharedAuthDto } from './dto/auth.dto';
+import { LoginDto, RegisterDto, ResetPasswordDto, SharedAuthDto, VerifyOtpDto } from './dto/auth.dto';
 
 import type { Response, Request } from 'express';
 
@@ -65,6 +65,43 @@ export class AuthController {
   ): Promise<ResponseDTO> {
     try {
       const response = await this.authService.resetPassword(payload);
+
+      return JsonResponse(res, response);
+    } catch (error) {
+      return ErrorResponse(res, error, req);
+    }
+  }
+
+  @ApiOperation({
+    summary: 'Register a merchant',
+    description:
+      'Self-serve merchant registration — creates a User and a linked Merchant, dispatches a phone-verification OTP',
+  })
+  @ApiOkResponse({ description: 'Account created, verification code sent', type: ApiResponseDTO })
+  @Post('register')
+  async register(@Body() payload: RegisterDto, @Res() res: Response, @Req() req: Request): Promise<ResponseDTO> {
+    try {
+      const response = await this.authService.register(payload);
+
+      return JsonResponse(res, response);
+    } catch (error) {
+      return ErrorResponse(res, error, req);
+    }
+  }
+
+  @ApiOperation({
+    summary: 'Verify registration OTP',
+    description: 'Confirms the phone-verification OTP sent at registration and logs the merchant in',
+  })
+  @ApiOkResponse({ description: 'Account verified successfully', type: ApiResponseDTO })
+  @Post('verify-registration-otp')
+  async verifyRegistrationOtp(
+    @Body() payload: VerifyOtpDto,
+    @Res() res: Response,
+    @Req() req: Request,
+  ): Promise<ResponseDTO> {
+    try {
+      const response = await this.authService.verifyRegistrationOtp(payload);
 
       return JsonResponse(res, response);
     } catch (error) {

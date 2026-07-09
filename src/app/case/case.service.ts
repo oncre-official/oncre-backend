@@ -64,10 +64,16 @@ export class CaseService {
   }
 
   async create(creator: User, payload: CreateCaseDto): Promise<ServiceResponse<Case>> {
-    const { merchant_name, merchant_phone, debtor_phone, debtor_name, debtor_address, amount, due_date } = payload;
+    const { merchant_id, merchant_name, merchant_phone, debtor_phone, debtor_name, debtor_address, amount, due_date } =
+      payload;
 
     const creatorId = new ObjectId(String(creator._id));
-    const merchant = await this.merchant.findOrCreate({ merchant_name, merchant_phone, created_by: creatorId });
+
+    const merchant = merchant_id
+      ? await this.merchant.findOne({ merchant_id })
+      : await this.merchant.findOrCreate({ merchant_name, merchant_phone, created_by: creatorId });
+
+    if (merchant_id && !merchant) throw new NotFoundException('Merchant not found');
 
     const cusPayload: ICreateCustomer = {
       customer_key: debtor_phone,
@@ -93,6 +99,7 @@ export class CaseService {
     const caseId = await this.shared.generateSequentialId('case_id', 'CA', 5);
 
     const data = await this.cases.create({
+      ...payload,
       case_id: caseId,
       merchant_id: merchant?.merchant_id,
       escalation_level: 1,
@@ -100,7 +107,6 @@ export class CaseService {
       status: 'ACTIVE',
       is_paused: false,
       activated_at: new Date(),
-      ...payload,
     });
 
     await Promise.all([

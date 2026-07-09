@@ -13,6 +13,19 @@ export interface IResetPassword extends ISharedAuth {
   newPassword: string;
 }
 
+export interface IVerifyOtp extends ISharedAuth {
+  otp: string;
+}
+
+export interface IRegister {
+  full_name: string;
+  business_name: string;
+  business_type?: string;
+  email: string;
+  phone: string;
+  password: string;
+}
+
 export interface IUserToken {
   user: User;
   token: string;

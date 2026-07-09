@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { BadRequestException, ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 
 import { config } from '@on/config';
-import { PaymentStatus } from '@on/enum';
+import { PaymentStatus, UserStatus } from '@on/enum';
 import { joinSearchQuery } from '@on/helpers/search';
 import { PaystackService } from '@on/services/paystack/service';
 import { IInitializePayment } from '@on/services/paystack/type';
@@ -15,8 +15,10 @@ import { CaseRepository } from '../case/repository/case.repository';
 import { CallService } from '../case/services/call.service';
 import { MessageService } from '../case/services/message.service';
 import { CaseStatus, RecoveryMode } from '../case/types/case.interface';
+import { MerchantRepository } from '../merchant/repository/merchant.repository';
 import { MessageRepository } from '../message/repository/message.repository';
 import { SharedService } from '../shared/shared.service';
+import { UserRepository } from '../user/repository/user.repository';
 
 import { CreatePlanDto } from './dto/plan.dto';
 import { QueryPaymentDto } from './dto/query.dto';
@@ -28,7 +30,9 @@ import { PaymentInstallmentRepository } from './repository/payment-installment.r
 import { PaymentPlanRepository } from './repository/payment-plan.repository';
 import { PaymentRepository } from './repository/payment.repository';
 import { InstallmentPaymentStatus, PaymentPlanStatus } from './types/payment-plan.interface';
+import { PaymentType } from './types/payment.interface';
 
+import type { UserDocument } from '../user/model/user.model';
 import type { Request } from 'express';
 
 @Injectable()
@@ -43,6 +47,8 @@ export class PaymentService {
     private readonly paystack: PaystackService,
     private readonly message: MessageRepository,
     private readonly plan: PaymentPlanRepository,
+    private readonly user: UserRepository,
+    private readonly merchant: MerchantRepository,
     private readonly caseMessage: MessageService,
     private readonly installment: PaymentInstallmentRepository,
   ) {}
@@ -155,6 +161,7 @@ export class PaymentService {
     if (installment) return this.processInstallment(installment, amountPaid);
 
     const payment = await this.payment.findOne({ reference });
+    if (payment?.type === PaymentType.ACTIVATION) return this.completeActivationPayment(payment, amountPaid);
     if (payment) return this.processDirect(payment, amountPaid);
 
     this.logger.log(`Webhook processing completed......`);
@@ -165,6 +172,75 @@ export class PaymentService {
   /**
    * UTILITY METHODS
    */
+  async initiateActivation(
+    user: UserDocument,
+    callbackUrl?: string,
+  ): Promise<ServiceResponse<{ payment_url: string; reference: string }>> {
+    const merchant = await this.merchant.findOne({ user_id: user._id });
+    if (!merchant) throw new NotFoundException('No merchant profile found for this account');
+    if (merchant.activated) throw new ConflictException('Merchant is already activated');
+
+    const existing = await this.payment.findOne({
+      merchant_id: merchant.merchant_id,
+      type: PaymentType.ACTIVATION,
+      status: PaymentStatus.PENDING,
+    });
+
+    if (existing) {
+      return {
+        data: { payment_url: existing.payment_url, reference: existing.reference },
+        message: 'Activation payment already pending',
+      };
+    }
+
+    const reference = await this.shared.generateSequentialId('payment_id', 'PAY', 5);
+    const amount = 5000;
+
+    const paymentPayload: IInitializePayment = {
+      email: user.email,
+      amount: amount * 100,
+      reference,
+      metadata: { merchant_id: merchant.merchant_id, type: PaymentType.ACTIVATION },
+      ...(callbackUrl ? { callback_url: callbackUrl } : {}),
+    };
+
+    const { paymentUrl } = await this.paystack.initiatePayment(paymentPayload);
+
+    await this.payment.create({
+      payment_id: reference,
+      merchant_id: merchant.merchant_id,
+      type: PaymentType.ACTIVATION,
+      amount,
+      amount_paid: 0,
+      status: PaymentStatus.PENDING,
+      reference,
+      payment_url: paymentUrl,
+      uploaded_by: user._id,
+    });
+
+    return { data: { payment_url: paymentUrl, reference }, message: 'Activation payment initialised' };
+  }
+
+  async verifyActivation(user: UserDocument, reference: string): Promise<ServiceResponse<{ activated: boolean }>> {
+    const payment = await this.payment.findOne({ reference, type: PaymentType.ACTIVATION });
+    if (!payment) throw new NotFoundException('Payment not found');
+
+    const merchant = await this.merchant.findOne({ merchant_id: payment.merchant_id });
+    if (!merchant || String(merchant.user_id) !== String(user._id)) throw new NotFoundException('Payment not found');
+
+    if (payment.status === PaymentStatus.PAID)
+      return { data: { activated: true }, message: 'Payment already confirmed' };
+
+    try {
+      const verification = await this.paystack.verifyPayment(reference);
+      await this.completeActivationPayment(payment, verification.amount);
+      return { data: { activated: true }, message: 'Payment confirmed. Account activated.' };
+    } catch (error: any) {
+      this.logger.log(`[Activation] verify not yet successful for ${reference}: ${error.message}`);
+      return { data: { activated: false }, message: 'Payment not yet completed' };
+    }
+  }
+
   async createPaymentLink(existingCase: Case, amount: number) {
     const { case_id } = existingCase;
 
@@ -294,6 +370,20 @@ export class PaymentService {
     }
 
     return;
+  }
+
+  private async completeActivationPayment(payment: Payment, amountPaid: number): Promise<void> {
+    if (payment.status === PaymentStatus.PAID) return;
+
+    await this.payment.updateOne(
+      { reference: payment.reference },
+      { amount_paid: amountPaid, status: PaymentStatus.PAID, paid_at: new Date() },
+    );
+
+    await this.merchant.updateOne({ merchant_id: payment.merchant_id }, { activated: true, activated_at: new Date() });
+
+    const merchant = await this.merchant.findOne({ merchant_id: payment.merchant_id });
+    if (merchant?.user_id) await this.user.updateOne({ _id: merchant.user_id }, { status: UserStatus.ACTIVE });
   }
 
   private async updatePaymentRecord(reference: string, amountPaid: number, status: string): Promise<void> {

@@ -28,7 +28,7 @@ export class MessageService {
   async sendActivation(newCase: Case) {
     const { merchant_id, debtor_phone, case_id } = newCase;
 
-    const merchant = await this.merchant.findById(merchant_id);
+    const merchant = await this.merchant.findOne({ merchant_id });
 
     this.logger.log(`[Case Activation] Starting for case ${case_id}`);
     this.logger.log(`[Case Activation] Debtor phone: ${debtor_phone}`);
@@ -104,7 +104,7 @@ export class MessageService {
   async schedule(newCase: Case) {
     const { merchant_id, case_id, debtor_name, amount, wholesaler_name, description, due_date, activated_at } = newCase;
 
-    const merchant = await this.merchant.findById(merchant_id);
+    const merchant = await this.merchant.findOne({ merchant_id });
 
     let scheduled = 0;
     const todayDate = today();
@@ -172,7 +172,7 @@ export class MessageService {
   async schedulePassive(caze: Case) {
     const { merchant_id, case_id, debtor_name, amount, debtor_phone } = caze;
 
-    const merchant = await this.merchant.findById(merchant_id);
+    const merchant = await this.merchant.findOne({ merchant_id });
 
     const nextMondays = getNextMondays(4);
     let scheduled = 0;

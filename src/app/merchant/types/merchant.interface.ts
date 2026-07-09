@@ -9,8 +9,10 @@ export interface IMerchant extends IBaseType {
   merchant_name: string;
   merchant_store_name: string;
   merchant_phone: string;
+  business_type?: string;
   location: string;
   activated: boolean;
+  activated_at?: Date;
   channel: string;
 }
 

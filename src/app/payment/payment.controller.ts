@@ -9,6 +9,7 @@ import {
 } from '@nestjs/swagger';
 
 import { Roles } from '@on/decorators/roles.decorator';
+import { User } from '@on/decorators/user.decorator';
 import { ErrorResponse, JsonResponse } from '@on/handlers/responses';
 import { requestFilter } from '@on/helpers/filter';
 import { ApiResponseDTO } from '@on/utils/dto/response.dto';
@@ -17,11 +18,13 @@ import { ResponseDTO } from '@on/utils/types';
 import { JwtAuthGuard } from '../auth/guard/auth.guard';
 import { RoleGuard } from '../auth/guard/role.guard';
 
+import { InitiateActivationDto, VerifyActivationDto } from './dto/activation.dto';
 import { CreatePlanDto } from './dto/plan.dto';
 import { QueryPaymentDto } from './dto/query.dto';
 import { Payment } from './model/payment.model';
 import { PaymentService } from './payment.service';
 
+import type { UserDocument } from '../user/model/user.model';
 import type { Response, Request } from 'express';
 
 @ApiTags('Payment')
@@ -64,6 +67,52 @@ export class PaymentController {
   async createCase(@Body() payload: CreatePlanDto, @Res() res: Response, @Req() req: Request): Promise<ResponseDTO> {
     try {
       const response = await this.paymentService.createPlan(payload);
+
+      return JsonResponse(res, response);
+    } catch (error) {
+      return ErrorResponse(res, error, req);
+    }
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Initiate merchant activation payment',
+    description: 'Starts a real Paystack checkout for the ₦5,000 merchant activation fee',
+  })
+  @ApiOkResponse({ description: 'Activation payment initiated', type: ApiResponseDTO })
+  @UseGuards(JwtAuthGuard)
+  @Post('activation/initiate')
+  async initiateActivation(
+    @User() user: UserDocument,
+    @Body() payload: InitiateActivationDto,
+    @Res() res: Response,
+    @Req() req: Request,
+  ): Promise<ResponseDTO> {
+    try {
+      const response = await this.paymentService.initiateActivation(user, payload.callback_url);
+
+      return JsonResponse(res, response);
+    } catch (error) {
+      return ErrorResponse(res, error, req);
+    }
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Verify merchant activation payment',
+    description: 'Synchronously checks a Paystack transaction and activates the merchant on success',
+  })
+  @ApiOkResponse({ description: 'Activation payment verified', type: ApiResponseDTO })
+  @UseGuards(JwtAuthGuard)
+  @Post('activation/verify')
+  async verifyActivation(
+    @User() user: UserDocument,
+    @Body() payload: VerifyActivationDto,
+    @Res() res: Response,
+    @Req() req: Request,
+  ): Promise<ResponseDTO> {
+    try {
+      const response = await this.paymentService.verifyActivation(user, payload.reference);
 
       return JsonResponse(res, response);
     } catch (error) {

@@ -4,6 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { PaystackService } from '@on/services/paystack/service';
 
 import { CaseModule } from '../case/case.module';
+import { MerchantModule } from '../merchant/merchant.module';
 import { MessageModule } from '../message/message.module';
 import { RoleModule } from '../role/role.module';
 import { SharedModule } from '../shared/shared.module';
@@ -33,6 +34,7 @@ import { PaymentRepository } from './repository/payment.repository';
     CaseModule,
     SharedModule,
     MessageModule,
+    MerchantModule,
   ],
   controllers: [PaymentController],
   providers: [

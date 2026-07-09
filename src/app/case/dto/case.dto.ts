@@ -3,6 +3,14 @@ import { PartialType } from '@nestjs/swagger';
 import { IsString, IsNotEmpty, IsOptional, IsNumber, IsPositive, IsDateString, Matches } from 'class-validator';
 
 export class CreateCaseDto {
+  @ApiPropertyOptional({
+    example: 'MER-00001',
+    description: 'Existing merchant_id — takes priority over merchant_name/merchant_phone lookup',
+  })
+  @IsOptional()
+  @IsString()
+  merchant_id?: string;
+
   @ApiProperty({ example: 'Merchant name', description: 'Merchant Name' })
   @IsString()
   @IsNotEmpty()
