@@ -16,6 +16,7 @@ import { CallService } from '../case/services/call.service';
 import { MessageService } from '../case/services/message.service';
 import { CaseStatus, RecoveryMode } from '../case/types/case.interface';
 import { MerchantRepository } from '../merchant/repository/merchant.repository';
+import { MerchantApprovalStatus } from '../merchant/types/merchant.interface';
 import { MessageRepository } from '../message/repository/message.repository';
 import { SharedService } from '../shared/shared.service';
 import { UserRepository } from '../user/repository/user.repository';
@@ -380,9 +381,13 @@ export class PaymentService {
       { amount_paid: amountPaid, status: PaymentStatus.PAID, paid_at: new Date() },
     );
 
-    await this.merchant.updateOne({ merchant_id: payment.merchant_id }, { activated: true, activated_at: new Date() });
-
     const merchant = await this.merchant.findOne({ merchant_id: payment.merchant_id });
+
+    // Merchants created by sales/field-agent staff need admin approval too — if it's still
+    // pending, hold off activating; MerchantService#approve completes it once approved.
+    if (merchant?.approval_status === MerchantApprovalStatus.PENDING) return;
+
+    await this.merchant.updateOne({ merchant_id: payment.merchant_id }, { activated: true, activated_at: new Date() });
     if (merchant?.user_id) await this.user.updateOne({ _id: merchant.user_id }, { status: UserStatus.ACTIVE });
   }
 

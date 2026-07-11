@@ -6,7 +6,7 @@ import { SharedService } from '@on/app/shared/shared.service';
 import { UserRepository } from '@on/app/user/repository/user.repository';
 import { UserStatus } from '@on/enum';
 import { generatePassword } from '@on/helpers/password';
-import { formatPhoneWithCode, parsePhone } from '@on/helpers/phone';
+import { formatPhoneWithCode, parsePhone, phoneNationalDigits } from '@on/helpers/phone';
 import { buildUserLookupQuery } from '@on/helpers/user';
 import { BaseRepository } from '@on/repository/base.repository';
 
@@ -99,5 +99,19 @@ export class CustomerRepository extends BaseRepository<CustomerDocument> {
     });
 
     return customer;
+  }
+
+  /**
+   * Looks up a Customer by phone using a last-10-digit suffix match, since
+   * `customer_phone`/`customer_key` aren't format-normalized on input the
+   * way `debtor_phone` (E.164-validated) is.
+   */
+  async findByPhone(phone: string): Promise<CustomerDocument | null> {
+    const suffix = phoneNationalDigits(phone);
+    if (!suffix) return null;
+
+    const regex = new RegExp(`${suffix}$`);
+
+    return this.customerModel.findOne({ $or: [{ customer_phone: regex }, { customer_key: regex }] });
   }
 }

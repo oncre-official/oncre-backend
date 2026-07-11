@@ -62,5 +62,12 @@ CustomerSchema.virtual('user', {
   justOne: true,
 });
 
+CustomerSchema.virtual('creator', {
+  ref: 'User',
+  localField: 'created_by',
+  foreignField: '_id',
+  justOne: true,
+});
+
 CustomerSchema.set('toObject', { virtuals: true });
 CustomerSchema.set('toJSON', { virtuals: true });

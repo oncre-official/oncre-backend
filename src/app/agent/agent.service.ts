@@ -12,6 +12,7 @@ import { ServiceResponse } from '@on/utils/types';
 
 import { Merchant } from '../merchant/model/merchant.model';
 import { MerchantRepository } from '../merchant/repository/merchant.repository';
+import { MerchantApprovalStatus } from '../merchant/types/merchant.interface';
 import { Payment } from '../payment/model/payment.model';
 import { PaymentAuditRepository } from '../payment/repository/payment-audit.repository';
 import { PaymentRepository } from '../payment/repository/payment.repository';
@@ -23,7 +24,13 @@ import { UserRepository } from '../user/repository/user.repository';
 
 import { ActivationPaymentDto, ActivationStatus, ConfirmActivationPaymentDto } from './dto/activation.dto';
 import { CommissionPayoutDto } from './dto/payout.dto';
-import { QueryAgentDto, QueryCommissionDto } from './dto/query.dto';
+import {
+  ActivationFeeSortField,
+  QueryActivationFeeSubmissionsDto,
+  QueryAgentDto,
+  QueryCommissionDto,
+  SortDirection,
+} from './dto/query.dto';
 import { buildSummaryWorksheet } from './helpers/exports';
 import { CommissionPayout } from './model/commission-payout.model';
 import { CommissionPayoutRepository } from './repository/commission-payout.repository';
@@ -352,10 +359,18 @@ export class AgentService {
             created_by: admin._id,
             note: `Commission for merchant ${merchant.merchant_name}`,
           }),
-          merchant.updateOne({ activated: true }),
-          this.user.updateOne({ _id: merchant.user_id }, { status: UserStatus.ACTIVE }),
-          this.sendActivationSMS(merchant),
         ]);
+
+        // The agent's payment submission is confirmed and commissioned either way — but the
+        // merchant itself still needs admin approval (separate from payment) before it can
+        // activate. If still pending, MerchantService#approve completes activation later.
+        if (merchant.approval_status !== MerchantApprovalStatus.PENDING) {
+          await Promise.all([
+            merchant.updateOne({ activated: true }),
+            this.user.updateOne({ _id: merchant.user_id }, { status: UserStatus.ACTIVE }),
+            this.sendActivationSMS(merchant),
+          ]);
+        }
 
         result = {
           data: payment,
@@ -369,6 +384,79 @@ export class AgentService {
     }
 
     return result;
+  }
+
+  private readonly ACTIVATION_SORT_FIELD_MAP: Record<ActivationFeeSortField, string> = {
+    [ActivationFeeSortField.DATE]: 'created_at',
+    [ActivationFeeSortField.AGENT]: 'agent_first_name',
+    [ActivationFeeSortField.ZONE]: 'zone',
+    [ActivationFeeSortField.MERCHANT_NAME]: 'merchant_name',
+    [ActivationFeeSortField.AMOUNT]: 'amount',
+  };
+
+  /**
+   * Field-agent activation-fee submissions with a receipt, joined to merchant + agent details.
+   * Excludes self-serve Paystack activations, which never set `receipt_url`/`merchant_status`.
+   */
+  async listActivationSubmissions(
+    query: QueryActivationFeeSubmissionsDto,
+    skip: number = 0,
+    limit: number = 20,
+  ): Promise<ServiceResponse<any>> {
+    const { agent_name, zone, merchant_status, sort_by, sort_dir } = query;
+
+    const pipeline: any[] = [
+      { $match: { type: PaymentType.ACTIVATION, receipt_url: { $exists: true, $ne: null } } },
+    ];
+
+    if (merchant_status) pipeline.push({ $match: { merchant_status } });
+
+    pipeline.push(
+      { $lookup: { from: 'merchants', localField: 'merchant_id', foreignField: 'merchant_id', as: 'merchant' } },
+      { $unwind: { path: '$merchant', preserveNullAndEmptyArrays: true } },
+      { $lookup: { from: 'agents', localField: 'uploaded_by', foreignField: 'user_id', as: 'agent' } },
+      { $unwind: { path: '$agent', preserveNullAndEmptyArrays: true } },
+    );
+
+    if (agent_name) {
+      pipeline.push({
+        $match: {
+          $or: [
+            { 'agent.first_name': { $regex: agent_name, $options: 'i' } },
+            { 'agent.last_name': { $regex: agent_name, $options: 'i' } },
+          ],
+        },
+      });
+    }
+
+    if (zone) pipeline.push({ $match: { 'agent.zone': { $regex: zone, $options: 'i' } } });
+
+    pipeline.push({
+      $project: {
+        payment_id: 1,
+        merchant_id: 1,
+        amount: 1,
+        receipt_url: 1,
+        merchant_status: 1,
+        created_at: 1,
+        merchant_name: '$merchant.merchant_name',
+        merchant_phone: '$merchant.merchant_phone',
+        merchant_store_name: '$merchant.merchant_store_name',
+        location: '$merchant.location',
+        agent_first_name: '$agent.first_name',
+        agent_last_name: '$agent.last_name',
+        zone: '$agent.zone',
+      },
+    });
+
+    const sortField = this.ACTIVATION_SORT_FIELD_MAP[sort_by ?? ActivationFeeSortField.DATE];
+
+    const data = await this.payment.aggregateAndCount(pipeline, {
+      aggregate: { skip, limit },
+      sort: { [sortField]: sort_dir === SortDirection.ASC ? 1 : -1 },
+    });
+
+    return { data, message: 'Field agent activation submissions fetched successfully.' };
   }
 
   async commissionPayout(admin: User, payload: CommissionPayoutDto): Promise<ServiceResponse<CommissionPayout>> {

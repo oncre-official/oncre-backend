@@ -101,3 +101,14 @@ export function toInternationalPhone(phone: string): string {
   }
   return normalized;
 }
+
+/**
+ * Last-10-digit "national significant number", country-code/leading-zero
+ * agnostic. Use to match phone numbers stored in inconsistent raw formats
+ * across collections (e.g. Customer.customer_phone vs Case.debtor_phone)
+ * where a straight equality/normalizePhone comparison isn't reliable.
+ */
+export function phoneNationalDigits(phone: string | number | null | undefined): string {
+  const digits = normalizePhone(phone).replace(/\D/g, '');
+  return digits.slice(-10);
+}

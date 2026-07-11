@@ -12,6 +12,9 @@ export class QueryCaseDto extends QueryDto {
   merchant_id?: string;
 
   @ApiPropertyOptional()
+  customer_id?: string;
+
+  @ApiPropertyOptional()
   debtor_name?: string;
 
   @ApiPropertyOptional()

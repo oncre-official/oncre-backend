@@ -1,6 +1,7 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 
+import { PaymentModule } from '../payment/payment.module';
 import { RoleModule } from '../role/role.module';
 import { SharedModule } from '../shared/shared.module';
 import { UserModule } from '../user/user.module';
@@ -16,6 +17,7 @@ import { MerchantRepository } from './repository/merchant.repository';
     UserModule,
     RoleModule,
     SharedModule,
+    forwardRef(() => PaymentModule),
   ],
   controllers: [MerchantController],
   providers: [MerchantRepository, MerchantService, MerchantRepository],

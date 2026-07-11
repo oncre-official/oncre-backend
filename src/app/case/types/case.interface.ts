@@ -21,6 +21,7 @@ export enum CaseStatus {
 export interface ICase extends IBaseType {
   case_id: string;
   merchant_id: string;
+  customer_id?: string;
 
   debtor_name: string;
   debtor_phone: string;
@@ -51,4 +52,5 @@ export interface ICase extends IBaseType {
   transition_required?: boolean;
   transition_due_at?: Date;
   transition_completed_at?: Date;
+  recovered_at?: Date;
 }

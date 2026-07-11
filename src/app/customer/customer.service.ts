@@ -16,6 +16,7 @@ import { UserRepository } from '../user/repository/user.repository';
 import { CreateCustomerDto } from './dto/customer.dto';
 import { Customer } from './model/customer.model';
 import { CustomerRepository } from './repository/customer.repository';
+import { CustomerStatus } from './types/customer.interface';
 
 @Injectable()
 export class CustomerService {
@@ -31,7 +32,7 @@ export class CustomerService {
 
     const joinQuery = joinSearchQuery({
       search,
-      fields: [],
+      fields: ['customer_name', 'customer_phone', 'business_name'],
       query,
       joins: [
         {
@@ -105,5 +106,21 @@ export class CustomerService {
     const data = { ...customer.toObject(), password };
 
     return { data, message: `Customer successfully created` };
+  }
+
+  async findById(id: string): Promise<ServiceResponse<Customer>> {
+    const customer = await this.customer.findById(id, { populate: [{ path: 'user' }, { path: 'creator' }] });
+    if (!customer) throw new NotFoundException('Customer not found');
+
+    return { data: customer, message: 'Customer successfully fetched' };
+  }
+
+  async deactivate(id: string): Promise<ServiceResponse<Customer>> {
+    const customer = await this.customer.findById(id);
+    if (!customer) throw new NotFoundException('Customer not found');
+
+    const updated = await this.customer.updateById(id, { status: CustomerStatus.INACTIVE });
+
+    return { data: updated, message: 'Customer deactivated successfully' };
   }
 }

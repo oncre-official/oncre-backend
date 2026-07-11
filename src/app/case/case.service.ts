@@ -5,7 +5,6 @@ import { joinSearchQuery } from '@on/helpers/search';
 import { ServiceResponse } from '@on/utils/types';
 
 import { CustomerRepository } from '../customer/repository/customer.repository';
-import { ICreateCustomer } from '../customer/types/customer.interface';
 import { MerchantRepository } from '../merchant/repository/merchant.repository';
 import { SharedService } from '../shared/shared.service';
 import { User } from '../user/model/user.model';
@@ -53,7 +52,7 @@ export class CaseService {
       normal: () =>
         this.cases.findAndCount(query, {
           aggregate: { skip, limit },
-          populate: [{ path: 'merchant' }, { path: 'dispute', match: { status: DisputeStatus.OPEN } }],
+          populate: [{ path: 'merchant' }, { path: 'customer' }, { path: 'dispute', match: { status: DisputeStatus.OPEN } }],
           sort: { createdAt: -1 },
         }),
     };
@@ -64,8 +63,7 @@ export class CaseService {
   }
 
   async create(creator: User, payload: CreateCaseDto): Promise<ServiceResponse<Case>> {
-    const { merchant_id, merchant_name, merchant_phone, debtor_phone, debtor_name, debtor_address, amount, due_date } =
-      payload;
+    const { merchant_id, merchant_name, merchant_phone, debtor_phone, amount, due_date } = payload;
 
     const creatorId = new ObjectId(String(creator._id));
 
@@ -75,15 +73,7 @@ export class CaseService {
 
     if (merchant_id && !merchant) throw new NotFoundException('Merchant not found');
 
-    const cusPayload: ICreateCustomer = {
-      customer_key: debtor_phone,
-      customer_phone: debtor_phone,
-      customer_name: debtor_name,
-      customer_address: debtor_address,
-      created_by: creatorId,
-    };
-
-    await this.customer.find(cusPayload);
+    const matchedCustomer = await this.customer.findByPhone(debtor_phone);
 
     const caseQuery = {
       merchant_id: merchant?.merchant_id,
@@ -102,6 +92,7 @@ export class CaseService {
       ...payload,
       case_id: caseId,
       merchant_id: merchant?.merchant_id,
+      customer_id: matchedCustomer?.customer_id,
       escalation_level: 1,
       current_day: 0,
       status: 'ACTIVE',
@@ -209,6 +200,7 @@ export class CaseService {
       {
         status: CaseStatus.FULLY_RECOVERED,
         transition_completed_at: new Date(),
+        recovered_at: new Date(),
       },
     );
 
@@ -227,6 +219,7 @@ export class CaseService {
       {
         status: CaseStatus.PARTIALLY_RECOVERED,
         transition_completed_at: new Date(),
+        recovered_at: new Date(),
       },
     );
 
@@ -270,7 +263,7 @@ export class CaseService {
 
     await this.transition.create({
       case_id: caze.case_id,
-      outcome: TransitionOutcome.ESCALATE_TO_LEGAL,
+      outcome: TransitionOutcome.WRITE_OFF,
       note: payload.note,
       actioned_by: user._id,
       actioned_at: new Date(),

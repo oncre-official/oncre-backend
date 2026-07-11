@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 
 import { PaystackService } from '@on/services/paystack/service';
@@ -34,7 +34,7 @@ import { PaymentRepository } from './repository/payment.repository';
     CaseModule,
     SharedModule,
     MessageModule,
-    MerchantModule,
+    forwardRef(() => MerchantModule),
   ],
   controllers: [PaymentController],
   providers: [

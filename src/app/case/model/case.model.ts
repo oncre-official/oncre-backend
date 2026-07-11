@@ -2,6 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
 import { Document, HydratedDocument } from 'mongoose';
 
+import { Customer } from '@on/app/customer/model/customer.model';
 import { Merchant } from '@on/app/merchant/model/merchant.model';
 
 import { CaseStatus, ICase, RecoveryMode } from '../types/case.interface';
@@ -26,6 +27,10 @@ export class Case extends Document implements ICase {
   @ApiProperty({ description: 'Merchant ID' })
   @Prop({ required: true })
   merchant_id: string;
+
+  @ApiProperty({ description: 'Customer ID (optional FK to Customer.customer_id, resolved by phone match)', required: false })
+  @Prop({ required: false })
+  customer_id?: string;
 
   @ApiProperty({ description: 'Debtor Name' })
   @Prop({ required: true })
@@ -123,11 +128,18 @@ export class Case extends Document implements ICase {
   @Prop({ Type: Date, required: false })
   transition_completed_at?: Date;
 
+  @ApiProperty({ required: false, description: 'Set once, exactly when the case transitions to FULLY_RECOVERED or PARTIALLY_RECOVERED' })
+  @Prop({ Type: Date, required: false })
+  recovered_at?: Date;
+
   /**
    * ATTRIBUTES
    */
   @ApiHideProperty()
   merchant: Merchant;
+
+  @ApiHideProperty()
+  customer: Customer;
 
   @ApiHideProperty()
   dispute: Dispute;
@@ -139,6 +151,13 @@ CaseSchema.virtual('merchant', {
   ref: 'Merchant',
   localField: 'merchant_id',
   foreignField: 'merchant_id',
+  justOne: true,
+});
+
+CaseSchema.virtual('customer', {
+  ref: 'Customer',
+  localField: 'customer_id',
+  foreignField: 'customer_id',
   justOne: true,
 });
 

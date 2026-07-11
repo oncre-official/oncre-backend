@@ -3,7 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { ObjectId } from 'mongodb';
 import { Document, HydratedDocument, Types } from 'mongoose';
 
-import { IMerchant } from '../types/merchant.interface';
+import { IMerchant, MerchantApprovalStatus } from '../types/merchant.interface';
 
 export type MerchantDocument = HydratedDocument<Merchant>;
 
@@ -59,6 +59,23 @@ export class Merchant extends Document implements IMerchant {
   @ApiProperty({ required: false, description: 'When the merchant was activated' })
   @Prop({ required: false })
   activated_at?: Date;
+
+  @ApiProperty({
+    description: 'Whether the merchant profile is active (admin deactivation flag, independent of the onboarding-fee `activated` field)',
+    example: true,
+  })
+  @Prop({ required: true, default: true })
+  is_active: boolean;
+
+  @ApiProperty({
+    enum: MerchantApprovalStatus,
+    description:
+      'Admin approval gate for merchants created by sales/field-agent staff. Merchants created by admin/super-admin ' +
+      'or via self-serve signup are exempt (default APPROVED). Independent of `activated` — a merchant only ' +
+      'activates once BOTH approval_status is APPROVED AND payment is confirmed, whichever finishes second.',
+  })
+  @Prop({ enum: MerchantApprovalStatus, required: true, default: MerchantApprovalStatus.APPROVED })
+  approval_status: MerchantApprovalStatus;
 }
 
 export const MerchantSchema = SchemaFactory.createForClass(Merchant);
@@ -72,7 +89,7 @@ MerchantSchema.virtual('user', {
 
 MerchantSchema.virtual('creator', {
   ref: 'User',
-  localField: 'created_id',
+  localField: 'created_by',
   foreignField: '_id',
   justOne: true,
 });

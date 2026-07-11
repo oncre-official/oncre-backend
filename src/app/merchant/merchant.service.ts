@@ -1,12 +1,14 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 
-import { UserStatus } from '@on/enum';
+import { PaymentStatus, UserStatus } from '@on/enum';
 import { formatPhoneWithCode, parsePhone } from '@on/helpers/phone';
 import { joinSearchQuery } from '@on/helpers/search';
 import { buildUserLookupQuery } from '@on/helpers/user';
 import { QueryDto } from '@on/utils/dto/query.dto';
 import { ServiceResponse } from '@on/utils/types';
 
+import { PaymentRepository } from '../payment/repository/payment.repository';
+import { PaymentType } from '../payment/types/payment.interface';
 import { RoleRepository } from '../role/repository/role.repository';
 import { SharedService } from '../shared/shared.service';
 import { User } from '../user/model/user.model';
@@ -15,6 +17,10 @@ import { UserRepository } from '../user/repository/user.repository';
 import { CreateMerchantDto } from './dto/merchant.dto';
 import { Merchant } from './model/merchant.model';
 import { MerchantRepository } from './repository/merchant.repository';
+import { MerchantApprovalStatus } from './types/merchant.interface';
+
+/** Merchants created by these staff roles need admin/super-admin approval before they can activate. */
+const APPROVAL_REQUIRED_CHANNELS = ['sales', 'field-agent'];
 
 @Injectable()
 export class MerchantService {
@@ -23,6 +29,7 @@ export class MerchantService {
     private readonly role: RoleRepository,
     private readonly shared: SharedService,
     private readonly merchant: MerchantRepository,
+    private readonly payment: PaymentRepository,
   ) {}
 
   async find(query: QueryDto, skip: number = 0, limit: number = 20): Promise<ServiceResponse<any>> {
@@ -30,7 +37,7 @@ export class MerchantService {
 
     const joinQuery = joinSearchQuery({
       search,
-      fields: [],
+      fields: ['merchant_name', 'merchant_phone', 'merchant_store_name'],
       query,
       joins: [
         {
@@ -97,6 +104,9 @@ export class MerchantService {
       user_id: user._id,
       created_by: creator._id,
       channel: creatorRole.name,
+      approval_status: APPROVAL_REQUIRED_CHANNELS.includes(creatorRole.name)
+        ? MerchantApprovalStatus.PENDING
+        : MerchantApprovalStatus.APPROVED,
     };
 
     const merchant = await this.merchant.create(merchantPayload);
@@ -104,5 +114,60 @@ export class MerchantService {
     const data = { ...merchant.toObject() };
 
     return { data, message: `Merchant successfully created` };
+  }
+
+  async findById(id: string): Promise<ServiceResponse<Merchant>> {
+    const merchant = await this.merchant.findById(id, { populate: [{ path: 'user' }, { path: 'creator' }] });
+    if (!merchant) throw new NotFoundException('Merchant not found');
+
+    return { data: merchant, message: 'Merchant successfully fetched' };
+  }
+
+  async deactivate(id: string): Promise<ServiceResponse<Merchant>> {
+    const merchant = await this.merchant.findById(id);
+    if (!merchant) throw new NotFoundException('Merchant not found');
+
+    const updated = await this.merchant.updateById(id, { is_active: false });
+
+    return { data: updated, message: 'Merchant deactivated successfully' };
+  }
+
+  /**
+   * Approves a merchant that was created by sales/field-agent staff. If a
+   * confirmed activation payment already exists (the payment side already
+   * checked approval_status and found it PENDING, so held off activating),
+   * this is the "second condition finishes" branch that completes activation.
+   */
+  async approve(id: string): Promise<ServiceResponse<Merchant>> {
+    const merchant = await this.merchant.findById(id);
+    if (!merchant) throw new NotFoundException('Merchant not found');
+
+    await this.merchant.updateById(id, { approval_status: MerchantApprovalStatus.APPROVED });
+
+    if (!merchant.activated) {
+      const confirmedPayment = await this.payment.findOne({
+        merchant_id: merchant.merchant_id,
+        type: PaymentType.ACTIVATION,
+        status: PaymentStatus.PAID,
+      });
+
+      if (confirmedPayment) {
+        await this.merchant.updateById(id, { activated: true, activated_at: new Date() });
+        if (merchant.user_id) await this.user.updateOne({ _id: merchant.user_id }, { status: UserStatus.ACTIVE });
+      }
+    }
+
+    const updated = await this.merchant.findById(id);
+
+    return { data: updated, message: 'Merchant approved successfully' };
+  }
+
+  async reject(id: string): Promise<ServiceResponse<Merchant>> {
+    const merchant = await this.merchant.findById(id);
+    if (!merchant) throw new NotFoundException('Merchant not found');
+
+    const updated = await this.merchant.updateById(id, { approval_status: MerchantApprovalStatus.REJECTED });
+
+    return { data: updated, message: 'Merchant rejected successfully' };
   }
 }

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags, ApiUnprocessableEntityResponse } from '@nestjs/swagger';
 
 import { Roles } from '@on/decorators/roles.decorator';
@@ -64,6 +64,43 @@ export class CustomerController {
   ): Promise<ResponseDTO> {
     try {
       const response = await this.customerService.create(user, payload);
+
+      return JsonResponse(res, response);
+    } catch (error) {
+      return ErrorResponse(res, error, req);
+    }
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get customer profile',
+    description: 'Allows users get a single customer by id',
+  })
+  @ApiOkResponse({ description: 'Get customer successful', type: ApiResponseDTO })
+  @UseGuards(JwtAuthGuard)
+  @Get(':id')
+  async getCustomer(@Param('id') id: string, @Res() res: Response, @Req() req: Request): Promise<ResponseDTO> {
+    try {
+      const response = await this.customerService.findById(id);
+
+      return JsonResponse(res, response);
+    } catch (error) {
+      return ErrorResponse(res, error, req);
+    }
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Deactivate customer',
+    description: 'Allows an admin to deactivate a customer profile',
+  })
+  @ApiOkResponse({ description: 'Deactivate customer successful', type: ApiResponseDTO })
+  @Roles('admin', 'super-admin')
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Patch(':id/deactivate')
+  async deactivateCustomer(@Param('id') id: string, @Res() res: Response, @Req() req: Request): Promise<ResponseDTO> {
+    try {
+      const response = await this.customerService.deactivate(id);
 
       return JsonResponse(res, response);
     } catch (error) {

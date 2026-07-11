@@ -39,7 +39,8 @@ export class PaymentController {
     description: 'Allows users get payments',
   })
   @ApiOkResponse({ description: 'Get payments successful ', type: [Payment] })
-  @UseGuards(JwtAuthGuard)
+  @Roles('admin', 'super-admin', 'recovery')
+  @UseGuards(JwtAuthGuard, RoleGuard)
   @Get()
   async findPayment(@Query() query: QueryPaymentDto, @Res() res: Response, @Req() req: Request): Promise<ResponseDTO> {
     try {

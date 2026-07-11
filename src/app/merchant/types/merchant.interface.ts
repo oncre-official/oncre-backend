@@ -2,6 +2,12 @@ import { ObjectId } from 'mongodb';
 
 import { IBaseType } from '@on/utils/types';
 
+export enum MerchantApprovalStatus {
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
+}
+
 export interface IMerchant extends IBaseType {
   user_id?: ObjectId;
   created_by?: ObjectId;
@@ -14,6 +20,8 @@ export interface IMerchant extends IBaseType {
   activated: boolean;
   activated_at?: Date;
   channel: string;
+  is_active: boolean;
+  approval_status: MerchantApprovalStatus;
 }
 
 export interface ICreateMerchant {

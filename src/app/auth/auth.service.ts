@@ -10,6 +10,7 @@ import { buildUserLookupQuery, buildUserLookupQueryFromPayload } from '@on/helpe
 import { ServiceResponse } from '@on/utils/types';
 
 import { MerchantRepository } from '../merchant/repository/merchant.repository';
+import { MerchantApprovalStatus } from '../merchant/types/merchant.interface';
 import { RoleRepository } from '../role/repository/role.repository';
 import { SharedService } from '../shared/shared.service';
 import { TokenRepository } from '../user/repository/token.repository';
@@ -159,6 +160,7 @@ export class AuthService {
       merchant_phone: normalizedPhone,
       channel: 'self-serve',
       activated: false,
+      approval_status: MerchantApprovalStatus.APPROVED,
     });
 
     let devOtp: string | undefined;

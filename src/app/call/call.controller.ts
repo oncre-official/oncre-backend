@@ -28,7 +28,8 @@ export class CallController {
     description: 'Allows users get calls',
   })
   @ApiOkResponse({ description: 'Get calls successful ', type: [Call] })
-  @UseGuards(JwtAuthGuard)
+  @Roles('admin', 'super-admin', 'recovery')
+  @UseGuards(JwtAuthGuard, RoleGuard)
   @Get()
   async findCall(@Query() query: QueryCallDto, @Res() res: Response, @Req() req: Request): Promise<ResponseDTO> {
     try {

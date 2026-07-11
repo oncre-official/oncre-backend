@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 
 import { TermiiService } from '@on/services/termii/service';
@@ -34,7 +34,7 @@ import { MessageService } from './services/message.service';
     CallModule,
     SharedModule,
     MessageModule,
-    MerchantModule,
+    forwardRef(() => MerchantModule),
     CustomerModule,
   ],
   controllers: [CaseController],

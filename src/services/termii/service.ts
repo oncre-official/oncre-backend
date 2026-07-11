@@ -90,7 +90,7 @@ export class TermiiService {
   async sendMessage(to: string, message: string): Promise<MessageResponse> {
     const payload: IMessageRequest = {
       api_key: this.apiKey,
-      to,
+      to: toInternationalPhone(to),
       from: this.senderId,
       sms: message,
       type: 'plain',

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiOperation, ApiTags, ApiUnprocessableEntityResponse } from '@nestjs/swagger';
 
 import { Roles } from '@on/decorators/roles.decorator';
@@ -64,6 +64,81 @@ export class MerchantController {
   ): Promise<ResponseDTO> {
     try {
       const response = await this.merchantService.create(user, payload);
+
+      return JsonResponse(res, response);
+    } catch (error) {
+      return ErrorResponse(res, error, req);
+    }
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get merchant profile',
+    description: 'Allows users get a single merchant by id',
+  })
+  @ApiOkResponse({ description: 'Get merchant successful', type: ApiResponseDTO })
+  @UseGuards(JwtAuthGuard)
+  @Get(':id')
+  async getMerchant(@Param('id') id: string, @Res() res: Response, @Req() req: Request): Promise<ResponseDTO> {
+    try {
+      const response = await this.merchantService.findById(id);
+
+      return JsonResponse(res, response);
+    } catch (error) {
+      return ErrorResponse(res, error, req);
+    }
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Deactivate merchant',
+    description: 'Allows an admin to deactivate a merchant profile',
+  })
+  @ApiOkResponse({ description: 'Deactivate merchant successful', type: ApiResponseDTO })
+  @Roles('admin', 'super-admin')
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Patch(':id/deactivate')
+  async deactivateMerchant(@Param('id') id: string, @Res() res: Response, @Req() req: Request): Promise<ResponseDTO> {
+    try {
+      const response = await this.merchantService.deactivate(id);
+
+      return JsonResponse(res, response);
+    } catch (error) {
+      return ErrorResponse(res, error, req);
+    }
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Approve merchant',
+    description: 'Allows an admin to approve a merchant created by sales/field-agent staff, gating its activation',
+  })
+  @ApiOkResponse({ description: 'Approve merchant successful', type: ApiResponseDTO })
+  @Roles('admin', 'super-admin')
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Patch(':id/approve')
+  async approveMerchant(@Param('id') id: string, @Res() res: Response, @Req() req: Request): Promise<ResponseDTO> {
+    try {
+      const response = await this.merchantService.approve(id);
+
+      return JsonResponse(res, response);
+    } catch (error) {
+      return ErrorResponse(res, error, req);
+    }
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Reject merchant',
+    description: 'Allows an admin to reject a merchant created by sales/field-agent staff',
+  })
+  @ApiOkResponse({ description: 'Reject merchant successful', type: ApiResponseDTO })
+  @Roles('admin', 'super-admin')
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Patch(':id/reject')
+  async rejectMerchant(@Param('id') id: string, @Res() res: Response, @Req() req: Request): Promise<ResponseDTO> {
+    try {
+      const response = await this.merchantService.reject(id);
 
       return JsonResponse(res, response);
     } catch (error) {

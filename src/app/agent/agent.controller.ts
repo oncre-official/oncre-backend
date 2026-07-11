@@ -14,7 +14,7 @@ import { RoleGuard } from '../auth/guard/role.guard';
 import { AgentService } from './agent.service';
 import { ActivationPaymentDto, ConfirmActivationPaymentDto } from './dto/activation.dto';
 import { CommissionPayoutDto } from './dto/payout.dto';
-import { ExportCommissionDto, QueryAgentDto, QueryCommissionDto } from './dto/query.dto';
+import { ExportCommissionDto, QueryActivationFeeSubmissionsDto, QueryAgentDto, QueryCommissionDto } from './dto/query.dto';
 
 import type { UserDocument } from '../user/model/user.model';
 import type { Response, Request } from 'express';
@@ -137,6 +137,30 @@ export class AgentController {
   ): Promise<ResponseDTO> {
     try {
       const response = await this.agentService.confirmActivation(user, payload);
+
+      return JsonResponse(res, response);
+    } catch (error) {
+      return ErrorResponse(res, error, req);
+    }
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get field-agent activation submissions',
+    description: 'Lists merchant activation payments submitted by field agents with a receipt, for admin review',
+  })
+  @ApiOkResponse({ description: 'Get activation submissions successful', type: ApiResponseDTO })
+  @Roles('admin', 'super-admin')
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Get('/activation-fee')
+  async findActivationSubmissions(
+    @Query() query: QueryActivationFeeSubmissionsDto,
+    @Res() res: Response,
+    @Req() req: Request,
+  ): Promise<ResponseDTO> {
+    try {
+      const { skip, limit } = query;
+      const response = await this.agentService.listActivationSubmissions(query, skip, limit);
 
       return JsonResponse(res, response);
     } catch (error) {
