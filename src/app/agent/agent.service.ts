@@ -405,9 +405,7 @@ export class AgentService {
   ): Promise<ServiceResponse<any>> {
     const { agent_name, zone, merchant_status, sort_by, sort_dir } = query;
 
-    const pipeline: any[] = [
-      { $match: { type: PaymentType.ACTIVATION, receipt_url: { $exists: true, $ne: null } } },
-    ];
+    const pipeline: any[] = [{ $match: { type: PaymentType.ACTIVATION, receipt_url: { $exists: true, $ne: null } } }];
 
     if (merchant_status) pipeline.push({ $match: { merchant_status } });
 

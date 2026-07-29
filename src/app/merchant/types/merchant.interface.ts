@@ -17,6 +17,9 @@ export interface IMerchant extends IBaseType {
   merchant_phone: string;
   business_type?: string;
   location: string;
+  bank_name?: string;
+  bank_account_number?: string;
+  bank_account_name?: string;
   activated: boolean;
   activated_at?: Date;
   channel: string;

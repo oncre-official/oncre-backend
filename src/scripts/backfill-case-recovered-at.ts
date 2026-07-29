@@ -1,10 +1,10 @@
 import { NestFactory } from '@nestjs/core';
 
-import { AppModule } from '../app.module';
 import { CaseRepository } from '../app/case/repository/case.repository';
 import { TransitionRepository } from '../app/case/repository/transition.repository';
 import { CaseStatus } from '../app/case/types/case.interface';
 import { TransitionOutcome } from '../app/case/types/transition.interface';
+import { AppModule } from '../app.module';
 
 /**
  * One-off backfill: sets `recovered_at` on cases that transitioned to
@@ -28,7 +28,9 @@ async function run() {
     let matched = 0;
     for (const caze of unmatched) {
       const outcome =
-        caze.status === CaseStatus.FULLY_RECOVERED ? TransitionOutcome.FULLY_RECOVERED : TransitionOutcome.PARTIALLY_RECOVERED;
+        caze.status === CaseStatus.FULLY_RECOVERED
+          ? TransitionOutcome.FULLY_RECOVERED
+          : TransitionOutcome.PARTIALLY_RECOVERED;
 
       const transition = await transitions.findOne({ case_id: caze.case_id, outcome });
       if (transition?.actioned_at) {

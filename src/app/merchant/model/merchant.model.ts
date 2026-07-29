@@ -48,6 +48,18 @@ export class Merchant extends Document implements IMerchant {
   @Prop({ required: false })
   location: string;
 
+  @ApiProperty({ description: 'Bank name for merchant remittance', example: 'GTBank', required: false })
+  @Prop({ required: false })
+  bank_name?: string;
+
+  @ApiProperty({ description: 'Bank account number for merchant remittance', example: '0123456789', required: false })
+  @Prop({ required: false })
+  bank_account_number?: string;
+
+  @ApiProperty({ description: 'Bank account name for merchant remittance', example: 'John Doe', required: false })
+  @Prop({ required: false })
+  bank_account_name?: string;
+
   @ApiProperty({ description: 'Channel through which the merchant was acquired', example: 'Admin' })
   @Prop({ required: false })
   channel: string;
@@ -61,7 +73,8 @@ export class Merchant extends Document implements IMerchant {
   activated_at?: Date;
 
   @ApiProperty({
-    description: 'Whether the merchant profile is active (admin deactivation flag, independent of the onboarding-fee `activated` field)',
+    description:
+      'Whether the merchant profile is active (admin deactivation flag, independent of the onboarding-fee `activated` field)',
     example: true,
   })
   @Prop({ required: true, default: true })

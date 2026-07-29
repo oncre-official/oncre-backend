@@ -9,6 +9,7 @@ import { MessageRepository } from '@on/app/message/repository/message.repository
 import { TrancheType } from '@on/app/payment/dto/plan.dto';
 import { PaymentService } from '@on/app/payment/payment.service';
 import { SharedService } from '@on/app/shared/shared.service';
+import { config } from '@on/config';
 import { normalizePhone } from '@on/helpers/phone';
 import { BrevoService } from '@on/services/brevo/service';
 import { TermiiService } from '@on/services/termii/service';
@@ -20,6 +21,9 @@ import { CallLogRepository } from '../repository/call-log.repository';
 import { IHandleOutcome } from '../types/index.interface';
 
 type OutcomeHandler = (call: Call, callLog?: CallLog) => Promise<void>;
+
+/** Used only if `EMAIL_DEFAULT_TO` isn't configured — set that env var to the real ops inbox instead of relying on this. */
+const DISPUTE_ALERT_FALLBACK_EMAIL = 'sysadmin@getoncre.com';
 
 @Injectable()
 export class OutcomeService {
@@ -256,7 +260,10 @@ export class OutcomeService {
     const emailContent = disputeRaisedContent(call.case, callLog?.note || '');
     const mailMessage = customEmail(emailContent);
 
-    await this.brevo.sendMail('yoyoplenty@gmail.com', 'OnCre - New Case Disputed', mailMessage);
+    const opsInbox = config.email.defaultTo;
+    if (!opsInbox) this.logger.warn('EMAIL_DEFAULT_TO is not configured — dispute alert may not reach an ops inbox.');
+
+    await this.brevo.sendMail(opsInbox || DISPUTE_ALERT_FALLBACK_EMAIL, 'OnCre - New Case Disputed', mailMessage);
   }
 
   private async sendUnreachableSMS(call: Call) {

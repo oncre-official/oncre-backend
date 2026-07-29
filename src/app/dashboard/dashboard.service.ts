@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 
+import { CallRepository } from '@on/app/call/repository/call.repository';
 import { CaseRepository } from '@on/app/case/repository/case.repository';
 import { CaseStatus } from '@on/app/case/types/case.interface';
-import { CallRepository } from '@on/app/call/repository/call.repository';
-import { PaymentRepository } from '@on/app/payment/repository/payment.repository';
 import { PaymentInstallmentRepository } from '@on/app/payment/repository/payment-installment.repository';
+import { PaymentRepository } from '@on/app/payment/repository/payment.repository';
 import { InstallmentPaymentStatus } from '@on/app/payment/types/payment-plan.interface';
 import { PaymentType } from '@on/app/payment/types/payment.interface';
 import { RoleRepository } from '@on/app/role/repository/role.repository';
@@ -13,7 +13,12 @@ import { CallStatus, PaymentStatus } from '@on/enum';
 import { addDaysUTC, calculateStartAndEndOfMonth, today } from '@on/helpers/date';
 import { ServiceResponse } from '@on/utils/types';
 
-import { DashboardSummary, PaymentPipelineBucket, UpcomingPayment } from './types/dashboard.interface';
+import {
+  DashboardSummary,
+  EscalationPipelineBucket,
+  PaymentPipelineBucket,
+  UpcomingPayment,
+} from './types/dashboard.interface';
 
 const DASHBOARD_PAYMENT_ROLES = ['admin', 'super-admin'];
 
@@ -31,14 +36,15 @@ export class DashboardService {
     const role = await this.role.findById(user.role_id);
     const canViewPayments = DASHBOARD_PAYMENT_ROLES.includes(role?.name);
 
-    const [kpis, payment_pipeline, upcoming_payments] = await Promise.all([
+    const [kpis, escalation_pipeline, payment_pipeline, upcoming_payments] = await Promise.all([
       this.computeKpis(),
+      this.computeEscalationPipeline(),
       canViewPayments ? this.computePaymentPipeline() : Promise.resolve(undefined),
       canViewPayments ? this.computeUpcomingPayments() : Promise.resolve(undefined),
     ]);
 
     return {
-      data: { kpis, payment_pipeline, upcoming_payments, generated_at: new Date() },
+      data: { kpis, escalation_pipeline, payment_pipeline, upcoming_payments, generated_at: new Date() },
       message: 'Dashboard summary fetched successfully',
     };
   }
@@ -48,17 +54,29 @@ export class DashboardService {
     const startOfTomorrow = addDaysUTC(startOfToday, 1);
     const { start: startOfMonth, end: endOfMonth } = calculateStartAndEndOfMonth();
 
-    const [total_active_cases, total_recovered_this_month, cases_in_call_queue_today, passive_cases] = await Promise.all([
-      this.cases.count({ status: CaseStatus.ACTIVE, is_paused: { $ne: true }, hold: { $ne: true } }),
-      this.cases.count({ recovered_at: { $gte: startOfMonth, $lte: endOfMonth } }),
-      this.calls.count({
-        scheduled_for: { $gte: startOfToday, $lt: startOfTomorrow },
-        status: { $in: [CallStatus.SCHEDULED, CallStatus.PENDING] },
-      }),
-      this.cases.count({ $or: [{ is_paused: true }, { hold: true }] }),
-    ]);
+    const [total_active_cases, total_recovered_this_month, cases_in_call_queue_today, passive_cases] =
+      await Promise.all([
+        this.cases.count({ status: CaseStatus.ACTIVE, is_paused: { $ne: true }, hold: { $ne: true } }),
+        this.cases.count({ recovered_at: { $gte: startOfMonth, $lte: endOfMonth } }),
+        this.calls.count({
+          scheduled_for: { $gte: startOfToday, $lt: startOfTomorrow },
+          status: { $in: [CallStatus.SCHEDULED, CallStatus.PENDING] },
+        }),
+        this.cases.count({ $or: [{ is_paused: true }, { hold: true }] }),
+      ]);
 
     return { total_active_cases, total_recovered_this_month, cases_in_call_queue_today, passive_cases };
+  }
+
+  private async computeEscalationPipeline(): Promise<EscalationPipelineBucket[]> {
+    const rows = (await this.cases.aggregate([
+      { $match: { status: CaseStatus.ACTIVE, is_paused: { $ne: true }, hold: { $ne: true } } },
+      { $group: { _id: '$escalation_level', count: { $sum: 1 } } },
+    ])) as unknown as { _id: number; count: number }[];
+
+    const byLevel = new Map(rows.map((row) => [row._id, row.count]));
+
+    return [1, 2, 3, 4].map((level) => ({ level, count: byLevel.get(level) ?? 0 }));
   }
 
   private async computePaymentPipeline() {

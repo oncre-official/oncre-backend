@@ -12,6 +12,7 @@ import { User } from '../user/model/user.model';
 import { CreateCaseDto } from './dto/case.dto';
 import { QueryCaseDto } from './dto/query.dto';
 import { TransitionCaseDto } from './dto/transition.dto';
+import { DebtEvaluation, evaluateDebt } from './helper/debt-evaluation';
 import { Case } from './model/case.model';
 import { Dispute } from './model/dispute.model';
 import { Transition } from './model/transition.model';
@@ -52,7 +53,11 @@ export class CaseService {
       normal: () =>
         this.cases.findAndCount(query, {
           aggregate: { skip, limit },
-          populate: [{ path: 'merchant' }, { path: 'customer' }, { path: 'dispute', match: { status: DisputeStatus.OPEN } }],
+          populate: [
+            { path: 'merchant' },
+            { path: 'customer' },
+            { path: 'dispute', match: { status: DisputeStatus.OPEN } },
+          ],
           sort: { createdAt: -1 },
         }),
     };
@@ -63,7 +68,11 @@ export class CaseService {
   }
 
   async create(creator: User, payload: CreateCaseDto): Promise<ServiceResponse<Case>> {
-    const { merchant_id, merchant_name, merchant_phone, debtor_phone, amount, due_date } = payload;
+    const { merchant_id, merchant_name, merchant_phone, debtor_phone, due_date } = payload;
+
+    if (due_date && new Date(due_date) > new Date()) {
+      throw new BadRequestException('Due date cannot be in the future');
+    }
 
     const creatorId = new ObjectId(String(creator._id));
 
@@ -78,9 +87,7 @@ export class CaseService {
     const caseQuery = {
       merchant_id: merchant?.merchant_id,
       debtor_phone,
-      amount: Number(amount),
-      due_date: new Date(due_date),
-      status: 'ACTIVE',
+      status: CaseStatus.ACTIVE,
     };
 
     const caseExist = await this.cases.findOne(caseQuery);
@@ -108,6 +115,15 @@ export class CaseService {
     ]);
 
     return { data, message: `Case successfully created` };
+  }
+
+  async evaluateDebt(id: string): Promise<ServiceResponse<DebtEvaluation>> {
+    const caze = await this.cases.findById(id);
+    if (!caze) throw new NotFoundException('Case not found');
+
+    const data = evaluateDebt(caze.due_date, caze.amount);
+
+    return { data, message: 'Debt evaluation computed successfully' };
   }
 
   async resolveDispute(creator: User, disputeId: string): Promise<ServiceResponse<Dispute>> {

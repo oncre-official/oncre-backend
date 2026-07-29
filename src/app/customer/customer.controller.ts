@@ -14,7 +14,7 @@ import { RoleGuard } from '../auth/guard/role.guard';
 import { User as UserDocument } from '../user/model/user.model';
 
 import { CustomerService } from './customer.service';
-import { CreateCustomerDto } from './dto/customer.dto';
+import { CashOnlyDto, CreateCustomerDto } from './dto/customer.dto';
 import { Customer } from './model/customer.model';
 
 import type { Response, Request } from 'express';
@@ -53,7 +53,7 @@ export class CustomerController {
     description: 'Allows users create customer',
   })
   @ApiOkResponse({ description: 'Create customer successful ', type: ApiResponseDTO })
-  @Roles('admin', 'super-admin', 'sales', 'field-agent')
+  @Roles('admin', 'super-admin', 'field-agent')
   @UseGuards(JwtAuthGuard, RoleGuard)
   @Post('/')
   async createCustomer(
@@ -101,6 +101,74 @@ export class CustomerController {
   async deactivateCustomer(@Param('id') id: string, @Res() res: Response, @Req() req: Request): Promise<ResponseDTO> {
     try {
       const response = await this.customerService.deactivate(id);
+
+      return JsonResponse(res, response);
+    } catch (error) {
+      return ErrorResponse(res, error, req);
+    }
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Restrict customer to cash-only',
+    description: 'Allows an admin to place a debtor under a Cash-Only restriction',
+  })
+  @ApiOkResponse({ description: 'Customer restricted successfully', type: ApiResponseDTO })
+  @Roles('admin', 'super-admin')
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Patch(':id/cash-only')
+  async setCashOnly(
+    @Param('id') id: string,
+    @Body() payload: CashOnlyDto,
+    @User() user: UserDocument,
+    @Res() res: Response,
+    @Req() req: Request,
+  ): Promise<ResponseDTO> {
+    try {
+      const response = await this.customerService.setCashOnly(id, user, payload.reason);
+
+      return JsonResponse(res, response);
+    } catch (error) {
+      return ErrorResponse(res, error, req);
+    }
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Clear customer cash-only restriction',
+    description: 'Allows an admin to clear a debtor Cash-Only restriction',
+  })
+  @ApiOkResponse({ description: 'Restriction cleared successfully', type: ApiResponseDTO })
+  @Roles('admin', 'super-admin')
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Patch(':id/clear-cash-only')
+  async clearCashOnly(
+    @Param('id') id: string,
+    @Body() payload: CashOnlyDto,
+    @User() user: UserDocument,
+    @Res() res: Response,
+    @Req() req: Request,
+  ): Promise<ResponseDTO> {
+    try {
+      const response = await this.customerService.clearCashOnly(id, user, payload.reason);
+
+      return JsonResponse(res, response);
+    } catch (error) {
+      return ErrorResponse(res, error, req);
+    }
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get customer restriction history',
+    description: 'Allows users to view the Cash-Only restriction history for a debtor',
+  })
+  @ApiOkResponse({ description: 'Restriction history fetched successfully', type: ApiResponseDTO })
+  @UseGuards(JwtAuthGuard)
+  @Get(':id/restrictions')
+  async getRestrictions(@Param('id') id: string, @Res() res: Response, @Req() req: Request): Promise<ResponseDTO> {
+    try {
+      const response = await this.customerService.listRestrictions(id);
 
       return JsonResponse(res, response);
     } catch (error) {

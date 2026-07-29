@@ -16,9 +16,12 @@ export class CreateCaseDto {
   @IsNotEmpty()
   merchant_name: string;
 
-  @ApiProperty({ example: 'Merchant phone', description: 'Merchant Phone' })
+  @ApiProperty({ example: '+2348012345678', description: 'Merchant Phone' })
   @IsString()
   @IsNotEmpty()
+  @Matches(/^\+\d{10,15}$/, {
+    message: 'Phone number must start with a country code (e.g., +234) followed by 10-15 digits',
+  })
   merchant_phone: string;
 
   @ApiProperty({ example: 'John Doe', description: 'Debtor full name' })

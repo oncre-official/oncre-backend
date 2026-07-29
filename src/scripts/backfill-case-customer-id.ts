@@ -1,8 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 
-import { AppModule } from '../app.module';
 import { CaseRepository } from '../app/case/repository/case.repository';
 import { CustomerRepository } from '../app/customer/repository/customer.repository';
+import { AppModule } from '../app.module';
 
 /**
  * One-off backfill: resolves `customer_id` on existing cases created before

@@ -28,7 +28,10 @@ export class Case extends Document implements ICase {
   @Prop({ required: true })
   merchant_id: string;
 
-  @ApiProperty({ description: 'Customer ID (optional FK to Customer.customer_id, resolved by phone match)', required: false })
+  @ApiProperty({
+    description: 'Customer ID (optional FK to Customer.customer_id, resolved by phone match)',
+    required: false,
+  })
   @Prop({ required: false })
   customer_id?: string;
 
@@ -128,7 +131,10 @@ export class Case extends Document implements ICase {
   @Prop({ Type: Date, required: false })
   transition_completed_at?: Date;
 
-  @ApiProperty({ required: false, description: 'Set once, exactly when the case transitions to FULLY_RECOVERED or PARTIALLY_RECOVERED' })
+  @ApiProperty({
+    required: false,
+    description: 'Set once, exactly when the case transitions to FULLY_RECOVERED or PARTIALLY_RECOVERED',
+  })
   @Prop({ Type: Date, required: false })
   recovered_at?: Date;
 

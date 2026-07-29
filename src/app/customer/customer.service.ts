@@ -15,8 +15,11 @@ import { UserRepository } from '../user/repository/user.repository';
 
 import { CreateCustomerDto } from './dto/customer.dto';
 import { Customer } from './model/customer.model';
+import { DebtorRestriction } from './model/debtor-restriction.model';
 import { CustomerRepository } from './repository/customer.repository';
+import { DebtorRestrictionRepository } from './repository/debtor-restriction.repository';
 import { CustomerStatus } from './types/customer.interface';
+import { DebtorRestrictionStatus } from './types/debtor-restriction.interface';
 
 @Injectable()
 export class CustomerService {
@@ -25,6 +28,7 @@ export class CustomerService {
     private readonly role: RoleRepository,
     private readonly shared: SharedService,
     private readonly customer: CustomerRepository,
+    private readonly restriction: DebtorRestrictionRepository,
   ) {}
 
   async find(query: QueryDto, skip: number = 0, limit: number = 20): Promise<ServiceResponse<any>> {
@@ -122,5 +126,51 @@ export class CustomerService {
     const updated = await this.customer.updateById(id, { status: CustomerStatus.INACTIVE });
 
     return { data: updated, message: 'Customer deactivated successfully' };
+  }
+
+  async setCashOnly(id: string, actor: User, reason?: string): Promise<ServiceResponse<Customer>> {
+    const customer = await this.customer.findById(id);
+    if (!customer) throw new NotFoundException('Customer not found');
+
+    const updated = await this.customer.updateById(id, { status: CustomerStatus.CASH_ONLY });
+
+    await this.restriction.create({
+      customer_id: customer.customer_id,
+      status: DebtorRestrictionStatus.CASH_ONLY,
+      reason,
+      actioned_by: actor._id,
+      actioned_at: new Date(),
+    });
+
+    return { data: updated, message: 'Customer restricted to cash-only successfully' };
+  }
+
+  async clearCashOnly(id: string, actor: User, reason?: string): Promise<ServiceResponse<Customer>> {
+    const customer = await this.customer.findById(id);
+    if (!customer) throw new NotFoundException('Customer not found');
+
+    const updated = await this.customer.updateById(id, { status: CustomerStatus.ACTIVE });
+
+    await this.restriction.create({
+      customer_id: customer.customer_id,
+      status: DebtorRestrictionStatus.ACTIVE,
+      reason,
+      actioned_by: actor._id,
+      actioned_at: new Date(),
+    });
+
+    return { data: updated, message: 'Cash-only restriction cleared successfully' };
+  }
+
+  async listRestrictions(id: string): Promise<ServiceResponse<DebtorRestriction[]>> {
+    const customer = await this.customer.findById(id);
+    if (!customer) throw new NotFoundException('Customer not found');
+
+    const data = await this.restriction.find(
+      { customer_id: customer.customer_id },
+      { populate: [{ path: 'actioned_by' }], sort: { actioned_at: -1 } },
+    );
+
+    return { data, message: 'Restriction history fetched successfully' };
   }
 }

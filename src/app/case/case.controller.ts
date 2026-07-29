@@ -55,7 +55,7 @@ export class CaseController {
     description: 'Allows users create case',
   })
   @ApiOkResponse({ description: 'Create case successful ', type: ApiResponseDTO })
-  @Roles('admin', 'super-admin', 'recovery')
+  @Roles('admin', 'super-admin', 'recovery', 'sales')
   @UseGuards(JwtAuthGuard, RoleGuard)
   @Post('/')
   async createCase(
@@ -66,6 +66,25 @@ export class CaseController {
   ): Promise<ResponseDTO> {
     try {
       const response = await this.caseService.create(user, payload);
+
+      return JsonResponse(res, response);
+    } catch (error) {
+      return ErrorResponse(res, error, req);
+    }
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Evaluate case debt',
+    description: 'Returns debt-age bracket and commission-weight estimate for a case',
+  })
+  @ApiOkResponse({ description: 'Debt evaluation computed successfully', type: ApiResponseDTO })
+  @Roles('admin', 'super-admin', 'sales', 'field-agent', 'recovery')
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Get('/:id/evaluation')
+  async evaluateDebt(@Param('id') id: string, @Res() res: Response, @Req() req: Request): Promise<ResponseDTO> {
+    try {
+      const response = await this.caseService.evaluateDebt(id);
 
       return JsonResponse(res, response);
     } catch (error) {

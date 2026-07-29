@@ -21,16 +21,16 @@ import { MessageRepository } from '../message/repository/message.repository';
 import { SharedService } from '../shared/shared.service';
 import { UserRepository } from '../user/repository/user.repository';
 
-import { CreatePlanDto } from './dto/plan.dto';
+import { CreatePlanDto, TrancheType } from './dto/plan.dto';
 import { QueryPaymentDto } from './dto/query.dto';
-import { convertToWeeks } from './helpers';
+import { getInstallmentCount, getInstallmentDueDate } from './helpers';
 import { PaymentInstallment } from './model/payment-installment.model';
 import { PaymentPlan } from './model/payment-plan.model';
 import { Payment } from './model/payment.model';
 import { PaymentInstallmentRepository } from './repository/payment-installment.repository';
 import { PaymentPlanRepository } from './repository/payment-plan.repository';
 import { PaymentRepository } from './repository/payment.repository';
-import { InstallmentPaymentStatus, PaymentPlanStatus } from './types/payment-plan.interface';
+import { InstallmentPaymentStatus, PaymentFrequency, PaymentPlanStatus } from './types/payment-plan.interface';
 import { PaymentType } from './types/payment.interface';
 
 import type { UserDocument } from '../user/model/user.model';
@@ -79,10 +79,16 @@ export class PaymentService {
     return { data, message: 'payments successfully fetched' };
   }
 
+  async listInstallments(caseId: string): Promise<ServiceResponse<PaymentInstallment[]>> {
+    const data = await this.installment.find({ case_id: caseId }, { sort: { due_date: 1 } });
+
+    return { data, message: 'Installments successfully fetched' };
+  }
+
   async createPlan(payload: CreatePlanDto): Promise<ServiceResponse<PaymentPlan>> {
     const { case_id, type, value } = payload;
 
-    const weeks = convertToWeeks(type, value);
+    const installmentCount = getInstallmentCount(type, value);
 
     const existingCase = await this.cases.findOne({ case_id });
     if (!existingCase) throw new NotFoundException('Case not found');
@@ -97,20 +103,19 @@ export class PaymentService {
     const planId = await this.shared.generateSequentialId('plan_id', 'PL', 5);
 
     const totalAmount = existingCase?.outstanding_balance || existingCase.amount;
-    const installmentAmount = Math.ceil(totalAmount / weeks);
+    const installmentAmount = Math.ceil(totalAmount / installmentCount);
 
     const plan = await this.plan.create({
       plan_id: planId,
       case_id,
       total_amount: totalAmount,
       total_paid: 0,
-      frequency: 'weekly',
+      frequency: type === TrancheType.Month ? PaymentFrequency.CUSTOME : PaymentFrequency.WEEKLY,
       status: PaymentPlanStatus.ACTIVE,
     });
 
-    for (let i = 0; i < weeks; i++) {
-      const dueDate = new Date();
-      dueDate.setDate(dueDate.getDate() + (i + 1) * 7);
+    for (let i = 0; i < installmentCount; i++) {
+      const dueDate = getInstallmentDueDate(type, i);
 
       await this.installment.create({
         plan_id: planId,

@@ -27,6 +27,7 @@ export enum MessageType {
   MISSED_CALL = 'missed_call',
   PAYMENT_CONFIRMATION = 'payment_confirmation',
   PAYMENT_PLAN = 'payment_plan',
+  PASSIVE_RECOVERY = 'passive_recovery',
 }
 
 export enum CallType {

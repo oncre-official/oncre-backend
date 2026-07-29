@@ -58,6 +58,29 @@ export class PaymentController {
 
   @ApiBearerAuth()
   @ApiOperation({
+    summary: 'Get installments for a case',
+    description: 'Allows users get payment-plan installments (paid/pending/overdue) for a single case',
+  })
+  @ApiOkResponse({ description: 'Get installments successful', type: ApiResponseDTO })
+  @Roles('admin', 'super-admin', 'recovery')
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Get('installments')
+  async findInstallments(
+    @Query('case_id') caseId: string,
+    @Res() res: Response,
+    @Req() req: Request,
+  ): Promise<ResponseDTO> {
+    try {
+      const response = await this.paymentService.listInstallments(caseId);
+
+      return JsonResponse(res, response);
+    } catch (error) {
+      return ErrorResponse(res, error, req);
+    }
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({
     summary: 'Create payment plan',
     description: 'Allows users create payment plan',
   })

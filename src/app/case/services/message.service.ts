@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 
 import { MerchantRepository } from '@on/app/merchant/repository/merchant.repository';
 import { MessageRepository } from '@on/app/message/repository/message.repository';
-import { ActionType } from '@on/enum';
+import { ActionType, MessageType } from '@on/enum';
 import { addDaysUTC, getNextMondays, today } from '@on/helpers/date';
 import { normalizePhone } from '@on/helpers/phone';
 import { TermiiService } from '@on/services/termii/service';
@@ -193,7 +193,7 @@ export class MessageService {
         merchant_id,
         debtor_phone,
         day: null,
-        message_type: 'passive_recovery',
+        message_type: MessageType.PASSIVE_RECOVERY,
         message_index: week + 1,
         action_type: ActionType.SMS,
         message_body: buildPassiveRecoveryMessage({

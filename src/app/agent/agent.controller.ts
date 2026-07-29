@@ -14,7 +14,12 @@ import { RoleGuard } from '../auth/guard/role.guard';
 import { AgentService } from './agent.service';
 import { ActivationPaymentDto, ConfirmActivationPaymentDto } from './dto/activation.dto';
 import { CommissionPayoutDto } from './dto/payout.dto';
-import { ExportCommissionDto, QueryActivationFeeSubmissionsDto, QueryAgentDto, QueryCommissionDto } from './dto/query.dto';
+import {
+  ExportCommissionDto,
+  QueryActivationFeeSubmissionsDto,
+  QueryAgentDto,
+  QueryCommissionDto,
+} from './dto/query.dto';
 
 import type { UserDocument } from '../user/model/user.model';
 import type { Response, Request } from 'express';
