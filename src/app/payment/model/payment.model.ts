@@ -5,17 +5,14 @@ import { Document, HydratedDocument } from 'mongoose';
 
 import { PaymentStatus } from '@on/enum';
 
-import { IPayment, MerchantPaymentStatus, PaymentType } from '../types/payment.interface';
+import { IPayment, MerchantPaymentStatus, PaymentType, RemittancePaymentStatus } from '../types/payment.interface';
 
 export type PaymentDocument = HydratedDocument<Payment>;
 
 @Schema({
   collection: 'payments',
   versionKey: false,
-  timestamps: {
-    createdAt: 'created_at',
-    updatedAt: 'updated_at',
-  },
+  timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
 })
 export class Payment extends Document implements IPayment {
   @ApiProperty()
@@ -29,6 +26,10 @@ export class Payment extends Document implements IPayment {
   @ApiProperty({ description: 'Case id' })
   @Prop({ required: false })
   case_id: string;
+
+  @ApiProperty({ description: 'Remittance id' })
+  @Prop({ required: false })
+  remittance_id: string;
 
   @ApiProperty({ required: false })
   @Prop({ enum: PaymentType, required: false })
@@ -49,6 +50,10 @@ export class Payment extends Document implements IPayment {
   @ApiProperty({ required: false })
   @Prop({ enum: MerchantPaymentStatus, required: false })
   merchant_status: MerchantPaymentStatus;
+
+  @ApiProperty({ required: false })
+  @Prop({ enum: RemittancePaymentStatus, required: false })
+  remittance_status: RemittancePaymentStatus;
 
   @ApiProperty({ required: false })
   @Prop({ Type: String, required: false })

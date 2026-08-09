@@ -21,17 +21,21 @@ import { MessageRepository } from '../message/repository/message.repository';
 import { SharedService } from '../shared/shared.service';
 import { UserRepository } from '../user/repository/user.repository';
 
+import { RemittanceDto } from './dto/activation.dto';
 import { CreatePlanDto, TrancheType } from './dto/plan.dto';
-import { QueryPaymentDto } from './dto/query.dto';
+import { QueryPaymentDto, QueryPaymentPlanDto } from './dto/query.dto';
 import { getInstallmentCount, getInstallmentDueDate } from './helpers';
 import { PaymentInstallment } from './model/payment-installment.model';
 import { PaymentPlan } from './model/payment-plan.model';
 import { Payment } from './model/payment.model';
+import { Remittance } from './model/remittance.model';
 import { PaymentInstallmentRepository } from './repository/payment-installment.repository';
 import { PaymentPlanRepository } from './repository/payment-plan.repository';
 import { PaymentRepository } from './repository/payment.repository';
+import { RemittanceRepository } from './repository/remittance.repository';
 import { InstallmentPaymentStatus, PaymentFrequency, PaymentPlanStatus } from './types/payment-plan.interface';
-import { PaymentType } from './types/payment.interface';
+import { PaymentType, RemittancePaymentStatus } from './types/payment.interface';
+import { RemittanceStatus } from './types/remittance.interface';
 
 import type { UserDocument } from '../user/model/user.model';
 import type { Request } from 'express';
@@ -51,6 +55,7 @@ export class PaymentService {
     private readonly user: UserRepository,
     private readonly merchant: MerchantRepository,
     private readonly caseMessage: MessageService,
+    private readonly remittance: RemittanceRepository,
     private readonly installment: PaymentInstallmentRepository,
   ) {}
 
@@ -77,6 +82,31 @@ export class PaymentService {
     const data = search ? await strategies.search() : await strategies.normal();
 
     return { data, message: 'payments successfully fetched' };
+  }
+
+  async findPlan(query: QueryPaymentPlanDto, skip: number = 0, limit: number = 20): Promise<ServiceResponse<any>> {
+    const { search } = query;
+
+    const joinQuery = joinSearchQuery({
+      search,
+      fields: [],
+      query,
+      joins: [],
+    });
+
+    const strategies = {
+      search: () => this.plan.aggregateAndCount(joinQuery, { aggregate: { skip, limit } }),
+      normal: () =>
+        this.plan.findAndCount(query, {
+          aggregate: { skip, limit },
+          populate: [{ path: 'installments' }],
+          sort: { createdAt: -1 },
+        }),
+    };
+
+    const data = search ? await strategies.search() : await strategies.normal();
+
+    return { data, message: 'payments plan successfully fetched' };
   }
 
   async listInstallments(caseId: string): Promise<ServiceResponse<PaymentInstallment[]>> {
@@ -144,6 +174,55 @@ export class PaymentService {
     ]);
 
     return { data: plan, message: `Payment plan created successfully` };
+  }
+
+  async remit(payload: RemittanceDto): Promise<ServiceResponse<Remittance>> {
+    const { payment_id } = payload;
+
+    const payment = await this.payment.findOne({ payment_id });
+    if (!payment) throw new NotFoundException('Payment not found');
+
+    if (payment.status !== PaymentStatus.PAID)
+      throw new BadRequestException('Only fully paid payments can be remitted');
+    if (!payment.merchant_id) throw new BadRequestException('Payment does not have a merchant');
+    if (payment.remittance_status === RemittancePaymentStatus.REMITTED)
+      throw new BadRequestException('Payment has already been remitted');
+
+    const existing = await this.remittance.findOne({ payment_id });
+    if (existing) throw new ConflictException('Remittance already exists for this payment');
+
+    const commissionRate = 2;
+    const grossAmount = payment.amount_paid;
+
+    if (!grossAmount || grossAmount <= 0) throw new BadRequestException('Payment has no valid amount paid');
+
+    const commissionAmount = this.calculateCommission(grossAmount, commissionRate);
+
+    const netAmount = grossAmount - commissionAmount;
+
+    const remittanceId = await this.shared.generateSequentialId('remittance_id', 'REM', 5);
+
+    const remittance = await this.remittance.create({
+      remittance_id: remittanceId,
+      merchant_id: payment.merchant_id,
+      case_id: payment.case_id,
+      payment_id: payment.payment_id,
+      gross_amount: grossAmount,
+      commission_rate: commissionRate,
+      commission_amount: commissionAmount,
+      net_amount: netAmount,
+      status: RemittanceStatus.PENDING,
+      provider: payment.provider,
+    });
+
+    await payment.updateOne({
+      remittance_id: remittanceId,
+      remittance_status: RemittancePaymentStatus.PENDING,
+    });
+
+    this.logger.log(`Remittance ${remittanceId} created for payment ${payment_id}`);
+
+    return { data: remittance, message: 'Payment remitted successfully' };
   }
 
   async handleWebhook(req: Request) {
@@ -431,5 +510,9 @@ export class PaymentService {
       this.caseMessage.cancel(theCase, 'Payment completed'),
       this.caseCall.cancel(theCase, 'Payment completed'),
     ]);
+  }
+
+  private calculateCommission(amount: number, rate: number): number {
+    return Number(((amount * rate) / 100).toFixed(2));
   }
 }

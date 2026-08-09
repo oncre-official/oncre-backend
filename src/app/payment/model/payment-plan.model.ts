@@ -1,8 +1,10 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
 import { Document, HydratedDocument } from 'mongoose';
 
 import { IPaymentPlan, PaymentFrequency, PaymentPlanStatus } from '../types/payment-plan.interface';
+
+import { PaymentInstallment } from './payment-installment.model';
 
 export type PaymentPlanDocument = HydratedDocument<PaymentPlan>;
 
@@ -54,9 +56,21 @@ export class PaymentPlan extends Document implements IPaymentPlan {
   @ApiProperty({ required: false })
   @Prop({ Type: Date, required: false })
   paid_at: Date;
+
+  /**
+   * UTILITY
+   */
+  @ApiHideProperty()
+  installments: PaymentInstallment[];
 }
 
 export const PaymentPlanSchema = SchemaFactory.createForClass(PaymentPlan);
 
 PaymentPlanSchema.set('toObject', { virtuals: true });
 PaymentPlanSchema.set('toJSON', { virtuals: true });
+
+PaymentPlanSchema.virtual('installments', {
+  ref: 'PaymentInstallment',
+  localField: 'plan_id',
+  foreignField: 'plan_id',
+});

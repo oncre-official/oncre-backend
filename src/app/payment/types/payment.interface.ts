@@ -21,6 +21,12 @@ export enum MerchantPaymentStatus {
   FOLLOW_UP = 'follow_up',
 }
 
+export enum RemittancePaymentStatus {
+  PENDING = 'pending',
+  REMITTED = 'remitted',
+  FAILED = 'failed',
+}
+
 export interface IPayment extends IBaseType {
   payment_id: string;
   merchant_id: string;
@@ -29,6 +35,7 @@ export interface IPayment extends IBaseType {
   amount: number;
   amount_paid: number;
   status: PaymentStatus;
+  remittance_status: RemittancePaymentStatus;
   merchant_status: MerchantPaymentStatus;
   receipt_url: string;
   reference: string;
@@ -39,6 +46,11 @@ export interface IPayment extends IBaseType {
   rejection_reason: string;
   confirmed_at: Date;
   paid_at: Date;
+
+  /**
+   * EXTRAS
+   */
+  remittance_id: string;
 }
 
 export interface IPaymentAudit extends IBaseType {

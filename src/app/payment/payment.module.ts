@@ -14,17 +14,20 @@ import { PaymentAudit, PaymentAuditSchema } from './model/payment-audit.model';
 import { PaymentInstallment, PaymentInstallmentSchema } from './model/payment-installment.model';
 import { PaymentPlan, PaymentPlanSchema } from './model/payment-plan.model';
 import { Payment, PaymentSchema } from './model/payment.model';
+import { Remittance, RemittanceSchema } from './model/remittance.model';
 import { PaymentController } from './payment.controller';
 import { PaymentService } from './payment.service';
 import { PaymentAuditRepository } from './repository/payment-audit.repository';
 import { PaymentInstallmentRepository } from './repository/payment-installment.repository';
 import { PaymentPlanRepository } from './repository/payment-plan.repository';
 import { PaymentRepository } from './repository/payment.repository';
+import { RemittanceRepository } from './repository/remittance.repository';
 
 @Module({
   imports: [
     MongooseModule.forFeature([
       { name: Payment.name, schema: PaymentSchema },
+      { name: Remittance.name, schema: RemittanceSchema },
       { name: PaymentPlan.name, schema: PaymentPlanSchema },
       { name: PaymentAudit.name, schema: PaymentAuditSchema },
       { name: PaymentInstallment.name, schema: PaymentInstallmentSchema },
@@ -42,6 +45,7 @@ import { PaymentRepository } from './repository/payment.repository';
     PaymentRepository,
     PaymentService,
     PaymentRepository,
+    RemittanceRepository,
     PaymentPlanRepository,
     PaymentAuditRepository,
     PaymentInstallmentRepository,
@@ -50,6 +54,7 @@ import { PaymentRepository } from './repository/payment.repository';
     PaymentRepository,
     PaymentService,
     PaymentRepository,
+    RemittanceRepository,
     PaymentPlanRepository,
     PaymentAuditRepository,
     PaymentInstallmentRepository,

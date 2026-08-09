@@ -18,9 +18,9 @@ import { ResponseDTO } from '@on/utils/types';
 import { JwtAuthGuard } from '../auth/guard/auth.guard';
 import { RoleGuard } from '../auth/guard/role.guard';
 
-import { InitiateActivationDto, VerifyActivationDto } from './dto/activation.dto';
+import { InitiateActivationDto, RemittanceDto, VerifyActivationDto } from './dto/activation.dto';
 import { CreatePlanDto } from './dto/plan.dto';
-import { QueryPaymentDto } from './dto/query.dto';
+import { QueryPaymentDto, QueryPaymentPlanDto } from './dto/query.dto';
 import { Payment } from './model/payment.model';
 import { PaymentService } from './payment.service';
 
@@ -49,6 +49,33 @@ export class PaymentController {
       const filter = requestFilter(query, { convertToRegex: false });
 
       const response = await this.paymentService.find(filter, skip, limit);
+
+      return JsonResponse(res, response);
+    } catch (error) {
+      return ErrorResponse(res, error, req);
+    }
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get payment installments plan',
+    description: 'Allows users get payment installment plan',
+  })
+  @ApiOkResponse({ description: 'Get payments installment plan successful ', type: [Payment] })
+  @Roles('admin', 'super-admin', 'recovery')
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Get('plans')
+  async findPaymentPlan(
+    @Query() query: QueryPaymentPlanDto,
+    @Res() res: Response,
+    @Req() req: Request,
+  ): Promise<ResponseDTO> {
+    try {
+      const { skip, limit } = query;
+
+      const filter = requestFilter(query, { convertToRegex: false });
+
+      const response = await this.paymentService.findPlan(filter, skip, limit);
 
       return JsonResponse(res, response);
     } catch (error) {
@@ -88,9 +115,28 @@ export class PaymentController {
   @Roles('admin', 'super-admin', 'recovery')
   @UseGuards(JwtAuthGuard, RoleGuard)
   @Post('/')
-  async createCase(@Body() payload: CreatePlanDto, @Res() res: Response, @Req() req: Request): Promise<ResponseDTO> {
+  async createPlan(@Body() payload: CreatePlanDto, @Res() res: Response, @Req() req: Request): Promise<ResponseDTO> {
     try {
       const response = await this.paymentService.createPlan(payload);
+
+      return JsonResponse(res, response);
+    } catch (error) {
+      return ErrorResponse(res, error, req);
+    }
+  }
+
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Remit payment',
+    description: 'Remit a completed payment',
+  })
+  @ApiOkResponse({ description: 'Remittance created successfully' })
+  @Roles('admin', 'super-admin', 'recovery')
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Post('/remit')
+  async remit(@Body() payload: RemittanceDto, @Res() res: Response, @Req() req: Request) {
+    try {
+      const response = await this.paymentService.remit(payload);
 
       return JsonResponse(res, response);
     } catch (error) {
