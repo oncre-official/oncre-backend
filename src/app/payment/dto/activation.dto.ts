@@ -14,10 +14,3 @@ export class VerifyActivationDto {
   @IsNotEmpty()
   reference: string;
 }
-
-export class RemittanceDto {
-  @ApiProperty({ description: 'The Payment id' })
-  @IsString()
-  @IsNotEmpty()
-  payment_id: string;
-}

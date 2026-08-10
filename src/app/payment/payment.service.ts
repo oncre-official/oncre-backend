@@ -21,9 +21,9 @@ import { MessageRepository } from '../message/repository/message.repository';
 import { SharedService } from '../shared/shared.service';
 import { UserRepository } from '../user/repository/user.repository';
 
-import { RemittanceDto } from './dto/activation.dto';
 import { CreatePlanDto, TrancheType } from './dto/plan.dto';
 import { QueryPaymentDto, QueryPaymentPlanDto } from './dto/query.dto';
+import { RemittanceDto } from './dto/remittance.dto';
 import { getInstallmentCount, getInstallmentDueDate } from './helpers';
 import { PaymentInstallment } from './model/payment-installment.model';
 import { PaymentPlan } from './model/payment-plan.model';

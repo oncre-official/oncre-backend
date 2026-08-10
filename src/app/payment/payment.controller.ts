@@ -18,9 +18,10 @@ import { ResponseDTO } from '@on/utils/types';
 import { JwtAuthGuard } from '../auth/guard/auth.guard';
 import { RoleGuard } from '../auth/guard/role.guard';
 
-import { InitiateActivationDto, RemittanceDto, VerifyActivationDto } from './dto/activation.dto';
+import { InitiateActivationDto, VerifyActivationDto } from './dto/activation.dto';
 import { CreatePlanDto } from './dto/plan.dto';
 import { QueryPaymentDto, QueryPaymentPlanDto } from './dto/query.dto';
+import { RemittanceDto } from './dto/remittance.dto';
 import { Payment } from './model/payment.model';
 import { PaymentService } from './payment.service';
 

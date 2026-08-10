@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { AgentModule } from '../agent/agent.module';
+import { PaymentModule } from '../payment/payment.module';
 import { RoleModule } from '../role/role.module';
 import { SharedModule } from '../shared/shared.module';
 import { UserModule } from '../user/user.module';
@@ -9,7 +10,7 @@ import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
 
 @Module({
-  imports: [UserModule, RoleModule, AgentModule, SharedModule],
+  imports: [UserModule, RoleModule, AgentModule, SharedModule, PaymentModule],
   controllers: [AdminController],
   providers: [AdminService],
   exports: [AdminService],

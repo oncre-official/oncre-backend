@@ -13,6 +13,10 @@ import { CallStatus, PaymentStatus } from '@on/enum';
 import { addDaysUTC, calculateStartAndEndOfMonth, today } from '@on/helpers/date';
 import { ServiceResponse } from '@on/utils/types';
 
+import { QueryRemittanceOverviewDto } from '../payment/dto/remittance.dto';
+import { RemittanceRepository } from '../payment/repository/remittance.repository';
+import { RemittanceStatus } from '../payment/types/remittance.interface';
+
 import {
   DashboardSummary,
   EscalationPipelineBucket,
@@ -29,6 +33,7 @@ export class DashboardService {
     private readonly cases: CaseRepository,
     private readonly calls: CallRepository,
     private readonly payments: PaymentRepository,
+    private readonly remittance: RemittanceRepository,
     private readonly installments: PaymentInstallmentRepository,
   ) {}
 
@@ -49,6 +54,107 @@ export class DashboardService {
     };
   }
 
+  async remittanceOverview(query: QueryRemittanceOverviewDto): Promise<ServiceResponse<any>> {
+    const { merchant_id, start_date: date_from, end_date: date_to } = query;
+
+    const match: Record<string, any> = {};
+
+    if (merchant_id) match.merchant_id = merchant_id;
+    if (date_from || date_to) {
+      match.createdAt = {};
+      if (date_from) match.createdAt.$gte = new Date(date_from);
+
+      if (date_to) {
+        const endDate = new Date(date_to);
+
+        endDate.setHours(23, 59, 59, 999);
+        match.createdAt.$lte = endDate;
+      }
+    }
+
+    const result: any = await this.remittance.aggregate([
+      { $match: match },
+      {
+        $facet: {
+          totals: [
+            {
+              $group: {
+                _id: null,
+                total_remittances: { $sum: 1 },
+                total_gross_amount: { $sum: '$gross_amount' },
+                total_commission: { $sum: '$commission_amount' },
+                total_net_amount: { $sum: '$net_amount' },
+              },
+            },
+          ],
+          status_breakdown: [
+            {
+              $group: {
+                _id: '$status',
+                count: { $sum: 1 },
+                amount: { $sum: '$net_amount' },
+                gross_amount: { $sum: '$gross_amount' },
+                commission_amount: { $sum: '$commission_amount' },
+              },
+            },
+          ],
+        },
+      },
+    ]);
+
+    const totals = result[0]?.totals?.[0] || {
+      total_remittances: 0,
+      total_gross_amount: 0,
+      total_commission: 0,
+      total_net_amount: 0,
+    };
+
+    const statusBreakdown = result[0]?.status_breakdown || [];
+
+    const getStatus = (status: RemittanceStatus) =>
+      statusBreakdown.find((item) => item._id === status) || {
+        count: 0,
+        amount: 0,
+        gross_amount: 0,
+        commission_amount: 0,
+      };
+
+    const completed = getStatus(RemittanceStatus.REMITTED);
+    const pending = getStatus(RemittanceStatus.PENDING);
+    const processing = getStatus(RemittanceStatus.PROCESSING);
+    const failed = getStatus(RemittanceStatus.FAILED);
+
+    return {
+      data: {
+        total_remittances: totals.total_remittances,
+        total_gross_amount: totals.total_gross_amount,
+        total_commission: totals.total_commission,
+        total_net_amount: totals.total_net_amount,
+        completed: {
+          count: completed.count,
+          amount: completed.amount,
+        },
+        pending: {
+          count: pending.count,
+          amount: pending.amount,
+        },
+        processing: {
+          count: processing.count,
+          amount: processing.amount,
+        },
+        failed: {
+          count: failed.count,
+          amount: failed.amount,
+        },
+      },
+
+      message: 'Remittance overview retrieved successfully',
+    };
+  }
+
+  /**
+   * PRIVATE METHODS
+   */
   private async computeKpis() {
     const startOfToday = today();
     const startOfTomorrow = addDaysUTC(startOfToday, 1);
