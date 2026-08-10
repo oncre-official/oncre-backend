@@ -9,10 +9,7 @@ export type RolePermissionDocument = HydratedDocument<RolePermission>;
 @Schema({
   collection: 'role_permissions',
   versionKey: false,
-  timestamps: {
-    createdAt: 'created_at',
-    updatedAt: 'updated_at',
-  },
+  timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
 })
 export class RolePermission extends Document implements IRolePermission {
   @ApiProperty()

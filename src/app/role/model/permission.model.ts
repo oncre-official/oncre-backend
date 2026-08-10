@@ -9,10 +9,7 @@ export type PermissionDocument = HydratedDocument<Permission>;
 @Schema({
   collection: 'permissions',
   versionKey: false,
-  timestamps: {
-    createdAt: 'created_at',
-    updatedAt: 'updated_at',
-  },
+  timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
 })
 export class Permission extends Document implements IPermission {
   @ApiProperty()
