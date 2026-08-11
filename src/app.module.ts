@@ -18,6 +18,7 @@ import { MerchantModule } from './app/merchant/merchant.module';
 import { MessageModule } from './app/message/message.module';
 import { PaymentModule } from './app/payment/payment.module';
 import { RoleModule } from './app/role/role.module';
+import { SettingModule } from './app/setting/setting.module';
 import { SharedModule } from './app/shared/shared.module';
 import { UserModule } from './app/user/user.module';
 import { AppController } from './app.controller';
@@ -44,6 +45,7 @@ import { HttpExceptionFilter } from './handlers/exceptions/http-exception.filter
     PaymentModule,
     AdminModule,
     AgentModule,
+    SettingModule,
     ScheduleModule.forRoot(),
   ],
   controllers: [AppController],

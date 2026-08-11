@@ -1,5 +1,5 @@
-import { ClientSession, ObjectId } from 'mongodb';
-import { Model, PopulateOptions, UpdateResult } from 'mongoose';
+import { ObjectId } from 'mongodb';
+import { Model, PopulateOptions, UpdateResult, ClientSession } from 'mongoose';
 
 import { hasNestedPopulate, normalizeMongoIds } from '@on/helpers/db';
 
@@ -23,13 +23,16 @@ interface Options {
   returnDocument?: 'after' | 'before';
   session?: ClientSession;
   useLookup?: boolean;
+  setDefaultsOnInsert?: boolean;
 }
 
 export class BaseRepository<T> {
   constructor(private readonly repository: Model<T>) {}
 
   async find(query?: GenericRecord, options?: Options): Promise<T[]> {
-    return await this.queryBuilder(query, options?.populate, options?.sort).exec();
+    const parsedQuery = normalizeMongoIds(query);
+
+    return await this.queryBuilder(parsedQuery, options?.populate, options?.sort, options?.session).exec();
   }
 
   async findOne(query: GenericRecord, options?: Options): Promise<T> {
@@ -37,7 +40,8 @@ export class BaseRepository<T> {
 
     let queryBuilder: any = this.repository.findOne(parsedQuery);
 
-    if (options && options.populate) queryBuilder = queryBuilder.populate(options.populate);
+    if (options?.populate) queryBuilder = queryBuilder.populate(options.populate);
+    if (options?.session) queryBuilder = queryBuilder.session(options.session);
 
     return await queryBuilder.exec();
   }
@@ -46,14 +50,17 @@ export class BaseRepository<T> {
     const objectId = new ObjectId(String(id));
     let queryBuilder: any = this.repository.findById(objectId);
 
-    if (options && options.populate) queryBuilder = queryBuilder.populate(options.populate);
+    if (options?.populate) queryBuilder = queryBuilder.populate(options.populate);
+    if (options?.session) queryBuilder = queryBuilder.session(options.session);
 
     return await queryBuilder.exec();
   }
 
   async findAndCount(query: GenericRecord, options?: Options): Promise<{ row: T[]; count: number }> {
-    const dataQueryBuilder = this.queryBuilder(query, options?.populate, options?.sort);
-    const countQueryBuilder = this.repository.find(query);
+    const parsedQuery = normalizeMongoIds(query);
+
+    const dataQueryBuilder = this.queryBuilder(parsedQuery, options?.populate, options?.sort, options?.session);
+    const countQueryBuilder = this.repository.find(parsedQuery).session(options?.session || null);
 
     const [data, count] = await Promise.all([
       dataQueryBuilder
@@ -93,10 +100,16 @@ export class BaseRepository<T> {
   async findOneAndCreate(query: GenericRecord, payload: GenericRecord, options?: Options): Promise<T> {
     const parsedQuery = normalizeMongoIds(query);
 
+    const parsedPayload = normalizeMongoIds(payload);
+
     let queryBuilder: any = this.repository.findOneAndUpdate(
       parsedQuery,
-      { $setOnInsert: payload },
-      { returnDocument: 'after', upsert: true },
+      { $setOnInsert: parsedPayload },
+      {
+        returnDocument: 'after',
+        upsert: true,
+        session: options?.session,
+      },
     );
 
     if (options?.populate) queryBuilder = queryBuilder.populate(options?.populate);
@@ -107,11 +120,14 @@ export class BaseRepository<T> {
   async findOneAndUpdate(query: GenericRecord, payload: GenericRecord, options: Options = {}): Promise<T | null> {
     const parsedQuery = normalizeMongoIds(query);
 
-    let queryBuilder = this.repository.findOneAndUpdate(parsedQuery, payload, {
+    const parsedPayload = normalizeMongoIds(payload);
+
+    let queryBuilder = this.repository.findOneAndUpdate(parsedQuery, parsedPayload, {
       returnDocument: options.returnDocument ?? 'after',
       upsert: options.upsert ?? false,
       lean: options.lean ?? false,
       select: options.select,
+      session: options.session,
     });
 
     if (options.populate) queryBuilder = queryBuilder.populate(options.populate);
@@ -119,32 +135,40 @@ export class BaseRepository<T> {
     return await queryBuilder.exec();
   }
 
-  async aggregate(query: any, options?: Options): Promise<T[]> {
+  async aggregate(query: any, options?: Options): Promise<T[] | any> {
     const aggregationPipeline: any[] = query;
     const option = options?.aggregate;
 
     if (option && option.limit !== undefined) aggregationPipeline.push({ $limit: Number(option.limit) });
-
     if (option && option.skip !== undefined) aggregationPipeline.push({ $skip: Number(option.skip) });
 
-    return await this.repository.aggregate(aggregationPipeline).exec();
+    let aggregate = this.repository.aggregate(aggregationPipeline);
+    if (options?.session) aggregate = aggregate.session(options.session);
+
+    return await aggregate.exec();
   }
 
-  async distinct(field: string, query?: GenericRecord): Promise<any[]> {
-    return await this.repository.distinct(field, query).exec();
-  }
-
-  async count(query?: GenericRecord): Promise<number> {
+  async distinct(field: string, query?: GenericRecord, options?: Options): Promise<any[]> {
     const parsedQuery = normalizeMongoIds(query || {});
 
-    return await this.repository.countDocuments(parsedQuery).exec();
+    let distinctQuery = this.repository.distinct(field, parsedQuery);
+    if (options?.session) distinctQuery = distinctQuery.session(options.session);
+
+    return await distinctQuery.exec();
+  }
+
+  async count(query?: GenericRecord, options?: Options): Promise<number> {
+    const parsedQuery = normalizeMongoIds(query || {});
+
+    let countQuery = this.repository.countDocuments(parsedQuery);
+    if (options?.session) countQuery = countQuery.session(options.session);
+
+    return await countQuery.exec();
   }
 
   async aggregateAndCount(pipeline: any[] = [], options?: Options): Promise<{ row: T[]; count: number }> {
     const skip = Number(options?.aggregate?.skip || 0);
     const limit = Number(options?.aggregate?.limit || 0);
-
-    const sort = options?.sort || {};
 
     const session = options?.session;
     const populate = options?.populate;
@@ -186,7 +210,6 @@ export class BaseRepository<T> {
 
     const dataPipeline = [...fullPipeline];
 
-    if (sort && Object.keys(sort).length > 0) dataPipeline.push({ $sort: sort });
     if (skip) dataPipeline.push({ $skip: skip });
     if (limit) dataPipeline.push({ $limit: limit });
 
@@ -204,73 +227,129 @@ export class BaseRepository<T> {
     return { row: data, count };
   }
 
-  async create(payload: GenericRecord): Promise<T> {
+  async create(payload: GenericRecord, options?: Options): Promise<T> {
     const parsedPayload = normalizeMongoIds(payload);
+
+    if (options?.session) {
+      const [doc] = await this.repository.create([parsedPayload], { session: options.session });
+
+      return doc;
+    }
+
     return await this.repository.create(parsedPayload);
   }
 
-  async createMany(payload: GenericRecord[]): Promise<T[]> {
+  async createMany(payload: GenericRecord[], options?: Options): Promise<T[] | any> {
     const parsedPayload = payload.map((item) => normalizeMongoIds(item));
+
+    if (options?.session) {
+      return await this.repository.insertMany(parsedPayload, { session: options.session });
+    }
+
     return await this.repository.insertMany(parsedPayload);
   }
 
-  async updateOne(query: GenericRecord, update: GenericRecord): Promise<T | null> {
+  async updateOne(query: GenericRecord, update: GenericRecord, options?: Options): Promise<T | null> {
     const parsedQuery = normalizeMongoIds(query);
-    const parsedUpdate = normalizeMongoIds(update);
-
-    return await this.repository.findOneAndUpdate(parsedQuery, parsedUpdate, { returnDocument: 'after' }).exec();
-  }
-
-  async updateMany(query: GenericRecord, update: GenericRecord): Promise<UpdateResult> {
-    const parsedQuery = normalizeMongoIds(query);
-    const parsedUpdate = normalizeMongoIds(update);
-
-    return await this.repository.updateMany(parsedQuery, parsedUpdate).exec();
-  }
-
-  async upsert(query: GenericRecord, update: GenericRecord): Promise<void> {
-    const parsedQuery = normalizeMongoIds(query);
-    const parsedUpdate = normalizeMongoIds(update);
-
-    await this.repository.updateOne(parsedQuery, parsedUpdate, { upsert: true }).exec();
-  }
-
-  async updateById(id: string | ObjectId, update: GenericRecord, options?: GenericRecord): Promise<T | any> {
-    const objectId = typeof id === 'string' ? new ObjectId(id) : id;
-
     const parsedUpdate = normalizeMongoIds(update);
 
     return await this.repository
-      .findByIdAndUpdate(objectId, parsedUpdate, { returnDocument: 'after', ...options })
+      .findOneAndUpdate(parsedQuery, parsedUpdate, {
+        returnDocument: 'after',
+        session: options?.session,
+      })
       .exec();
   }
 
-  async deleteOne(query: GenericRecord): Promise<void> {
-    await this.repository.deleteOne(query).exec();
+  async updateMany(query: GenericRecord, update: GenericRecord, options?: Options): Promise<UpdateResult> {
+    const parsedQuery = normalizeMongoIds(query);
+    const parsedUpdate = normalizeMongoIds(update);
+
+    let updateQuery = this.repository.updateMany(parsedQuery, parsedUpdate);
+
+    if (options?.session) {
+      updateQuery = updateQuery.session(options.session);
+    }
+
+    return await updateQuery.exec();
   }
 
-  async deleteById(id: string | ObjectId): Promise<void> {
+  async upsert(query: GenericRecord, update: GenericRecord, options?: Options): Promise<void> {
+    const parsedQuery = normalizeMongoIds(query);
+    const parsedUpdate = normalizeMongoIds(update);
+
+    const updateQuery = this.repository.updateOne(parsedQuery, parsedUpdate, {
+      upsert: true,
+      session: options?.session,
+    });
+
+    await updateQuery.exec();
+  }
+
+  async updateById(
+    id: string | ObjectId,
+    update: GenericRecord,
+    options?: GenericRecord & { session?: ClientSession },
+  ): Promise<T | any> {
+    const objectId = typeof id === 'string' ? new ObjectId(id) : id;
+    const parsedUpdate = normalizeMongoIds(update);
+
+    return await this.repository
+      .findByIdAndUpdate(objectId, parsedUpdate, {
+        returnDocument: 'after',
+        ...options,
+      })
+      .exec();
+  }
+
+  async deleteOne(query: GenericRecord, options?: Options): Promise<void> {
+    const parsedQuery = normalizeMongoIds(query);
+
+    let deleteQuery = this.repository.deleteOne(parsedQuery);
+    if (options?.session) deleteQuery = deleteQuery.session(options.session);
+
+    await deleteQuery.exec();
+  }
+
+  async deleteById(id: string | ObjectId, options?: Options): Promise<void> {
     const objectId = new ObjectId(String(id));
-    await this.repository.findByIdAndDelete(objectId).exec();
+
+    let deleteQuery = this.repository.findByIdAndDelete(objectId);
+    if (options?.session) deleteQuery = deleteQuery.session(options.session);
+
+    await deleteQuery.exec();
   }
 
-  async deleteMany(query: GenericRecord): Promise<void> {
-    await this.repository.deleteMany(query);
+  async deleteMany(query: GenericRecord, options?: Options): Promise<void> {
+    const parsedQuery = normalizeMongoIds(query);
+
+    let deleteQuery = this.repository.deleteMany(parsedQuery);
+    if (options?.session) deleteQuery = deleteQuery.session(options.session);
+
+    await deleteQuery.exec();
   }
+
+  /**
+   * PRIVATE METHODS
+   */
 
   private queryBuilder(
     query: GenericRecord = {},
     populateOptions?: PopulateOptions[],
     sortOptions?: { [key: string]: number },
+    session?: ClientSession,
     projectionOptions?: { [key: string]: number },
   ): any {
     let queryBuilder: any = this.repository.find(query, projectionOptions);
 
     if (populateOptions) queryBuilder = queryBuilder.populate(populateOptions);
+    if (session) queryBuilder = queryBuilder.session(session);
 
     const defaultSortField = 'created_at';
     const defaultSortDirection = -1;
-    const finalSortOptions = sortOptions || { [defaultSortField]: defaultSortDirection };
+    const finalSortOptions = sortOptions || {
+      [defaultSortField]: defaultSortDirection,
+    };
 
     queryBuilder = queryBuilder.sort(finalSortOptions);
 
